@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>DataLens</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>iyulab</Authors>
+    <Description>Exploratory data analysis engine for CSV/Excel datasets. Produces JSON analysis results including profiling, descriptive statistics, correlation, regression, clustering, outlier detection, PCA, and feature importance.</Description>
+    <PackageTags>eda;data-analysis;statistics;csv;profiling;correlation;clustering</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/iyulab/DataLens</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FilePrepper" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\u-insight\bindings\csharp\UInsight\UInsight.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
