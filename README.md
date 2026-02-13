@@ -1,5 +1,10 @@
 # DataLens
 
+[![NuGet](https://img.shields.io/nuget/v/DataLens.svg)](https://www.nuget.org/packages/DataLens)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/DataLens.svg)](https://www.nuget.org/packages/DataLens)
+[![Build](https://github.com/iyulab/DataLens/actions/workflows/publish.yml/badge.svg)](https://github.com/iyulab/DataLens/actions/workflows/publish.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A .NET library for exploratory data analysis, statistical profiling, and interactive report generation.
 
 ## Overview
