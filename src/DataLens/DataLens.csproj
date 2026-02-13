@@ -9,10 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="FilePrepper" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\u-insight\bindings\csharp\UInsight\UInsight.csproj" />
+    <PackageReference Include="UInsight" />
   </ItemGroup>
 
   <ItemGroup>

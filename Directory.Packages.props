@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- Core dependencies -->
     <PackageVersion Include="FilePrepper" Version="0.4.9" />
-    <PackageVersion Include="UInsight" Version="0.2.0" />
+    <PackageVersion Include="UInsight" Version="0.1.0" />
 
     <!-- Test dependencies -->
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
