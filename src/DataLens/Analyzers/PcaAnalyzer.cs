@@ -8,7 +8,8 @@ public class PcaAnalyzer : IAnalyzer<PcaReport>
 {
     public Task<PcaReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
     {
-        var matrix = adapter.ToCleanMatrix();
+        // PCA는 스케일에 민감 → 결측값 대체 + Z-Score 정규화
+        var matrix = adapter.ToScaledMatrix();
         int nRows = matrix.GetLength(0);
         int nCols = matrix.GetLength(1);
         if (nRows < 3 || nCols < 2)

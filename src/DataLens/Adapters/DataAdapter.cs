@@ -159,4 +159,95 @@ public class DataAdapter
     {
         return _dataFrame.ToCsv();
     }
+
+    /// <summary>
+    /// 결측값을 중앙값으로 대체한 matrix 반환.
+    /// 클러스터링, PCA, 이상치 탐지 등 모든 행이 필요한 분석에 사용.
+    /// </summary>
+    public double[,] ToImputedMatrix(params string[] columns)
+    {
+        var cols = columns.Length > 0 ? columns : _numericColumns.ToArray();
+        if (cols.Length == 0)
+            throw new InvalidOperationException("No numeric columns available.");
+
+        // 먼저 원본 matrix (NaN 포함) 생성
+        var rows = _dataFrame.Rows;
+        int nRows = rows.Count;
+        var matrix = new double[nRows, cols.Length];
+
+        for (int j = 0; j < cols.Length; j++)
+        {
+            int i = 0;
+            foreach (var row in rows)
+            {
+                row.TryGetValue(cols[j], out var val);
+                matrix[i, j] = double.TryParse(val, out var d) ? d : double.NaN;
+                i++;
+            }
+        }
+
+        // 컬럼별 중앙값으로 NaN 대체
+        for (int j = 0; j < cols.Length; j++)
+        {
+            var validValues = new List<double>();
+            for (int i = 0; i < nRows; i++)
+            {
+                if (!double.IsNaN(matrix[i, j]))
+                    validValues.Add(matrix[i, j]);
+            }
+
+            if (validValues.Count == 0) continue;
+
+            validValues.Sort();
+            double median = validValues.Count % 2 == 0
+                ? (validValues[validValues.Count / 2 - 1] + validValues[validValues.Count / 2]) / 2.0
+                : validValues[validValues.Count / 2];
+
+            for (int i = 0; i < nRows; i++)
+            {
+                if (double.IsNaN(matrix[i, j]))
+                    matrix[i, j] = median;
+            }
+        }
+
+        return matrix;
+    }
+
+    /// <summary>
+    /// 결측값 대체 + Z-Score 정규화된 matrix 반환.
+    /// 클러스터링, PCA 등 스케일에 민감한 분석에 사용.
+    /// </summary>
+    public double[,] ToScaledMatrix(params string[] columns)
+    {
+        var matrix = ToImputedMatrix(columns);
+        int nRows = matrix.GetLength(0);
+        int nCols = matrix.GetLength(1);
+
+        if (nRows < 2) return matrix;
+
+        for (int j = 0; j < nCols; j++)
+        {
+            // 평균 계산
+            double sum = 0;
+            for (int i = 0; i < nRows; i++) sum += matrix[i, j];
+            double mean = sum / nRows;
+
+            // 표준편차 계산
+            double ssq = 0;
+            for (int i = 0; i < nRows; i++) ssq += (matrix[i, j] - mean) * (matrix[i, j] - mean);
+            double std = Math.Sqrt(ssq / (nRows - 1));
+
+            // 상수 컬럼이면 0으로 설정
+            if (std < 1e-10)
+            {
+                for (int i = 0; i < nRows; i++) matrix[i, j] = 0;
+            }
+            else
+            {
+                for (int i = 0; i < nRows; i++) matrix[i, j] = (matrix[i, j] - mean) / std;
+            }
+        }
+
+        return matrix;
+    }
 }

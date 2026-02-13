@@ -8,7 +8,8 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
 {
     public Task<OutlierReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
     {
-        var matrix = adapter.ToCleanMatrix();
+        // 이상치 탐지는 모든 행이 필요 → 결측값 중앙값 대체 (정규화는 안 함, 원본 스케일에서 탐지)
+        var matrix = adapter.ToImputedMatrix();
         int nRows = matrix.GetLength(0);
         if (nRows < 3 || matrix.GetLength(1) < 1)
             return Task.FromResult(new OutlierReport { TotalRows = nRows });

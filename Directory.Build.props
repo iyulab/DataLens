@@ -1,0 +1,26 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- NuGet 공통 메타데이터 -->
+    <Authors>iyulab</Authors>
+    <Company>iyulab</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/iyulab/DataLens</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- 기본적으로 NuGet 배포 비활성화 -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- /src 하위 프로젝트만 NuGet 배포 대상 -->
+  <PropertyGroup Condition="$(MSBuildProjectDirectory.Contains('src'))">
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+</Project>

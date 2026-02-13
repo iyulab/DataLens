@@ -8,7 +8,8 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 {
     public Task<ClusterReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
     {
-        var matrix = adapter.ToCleanMatrix();
+        // 클러스터링은 스케일에 민감 → 결측값 대체 + Z-Score 정규화
+        var matrix = adapter.ToScaledMatrix();
         if (matrix.GetLength(0) < 3 || matrix.GetLength(1) < 1)
             return Task.FromResult(new ClusterReport());
 

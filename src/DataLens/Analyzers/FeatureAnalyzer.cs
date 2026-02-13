@@ -13,7 +13,8 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
             return Task.FromResult(new FeatureReport());
 
         using var client = new InsightClient();
-        var matrix = adapter.ToCleanMatrix();
+        // 피처 중요도는 모든 행이 필요 → 결측값 중앙값 대체
+        var matrix = adapter.ToImputedMatrix();
         if (matrix.GetLength(0) < 3)
             return Task.FromResult(new FeatureReport());
 
