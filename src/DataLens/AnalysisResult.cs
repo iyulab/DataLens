@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DataLens.Models;
 using DataLens.Serialization;
+using UInsight;
 
 namespace DataLens;
 
@@ -32,6 +33,12 @@ public class AnalysisResult
     public DistributionReport? Distribution { get; init; }
     public FeatureReport? Features { get; init; }
     public PcaReport? Pca { get; init; }
+
+    /// <summary>
+    /// 분석 중 발생한 비치명적 경고 목록.
+    /// null인 분석 필드가 있다면 여기서 원인을 확인할 수 있다.
+    /// </summary>
+    public IReadOnlyList<AnalysisWarning> Warnings { get; init; } = [];
 
     public string ToJson(JsonSerializerOptions? options = null)
     {

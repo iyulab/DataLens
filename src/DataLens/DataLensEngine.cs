@@ -2,6 +2,7 @@ using DataLens.Adapters;
 using DataLens.Analyzers;
 using DataLens.Models;
 using FilePrepper.Pipeline;
+using UInsight;
 
 namespace DataLens;
 
@@ -20,41 +21,42 @@ public static class DataLensEngine
     {
         options ??= AnalysisOptions.Default;
         var adapter = new DataAdapter(dataFrame);
+        var warnings = new List<AnalysisWarning>();
 
         var profile = options.IncludeProfiling
-            ? await SafeAnalyze(() => new ProfilingAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Profiling", () => new ProfilingAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var descriptive = options.IncludeDescriptive
-            ? await SafeAnalyze(() => new DescriptiveAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Descriptive", () => new DescriptiveAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var correlation = options.IncludeCorrelation
-            ? await SafeAnalyze(() => new CorrelationAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Correlation", () => new CorrelationAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var regression = options.IncludeRegression
-            ? await SafeAnalyze(() => new RegressionAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Regression", () => new RegressionAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var distribution = options.IncludeDistribution
-            ? await SafeAnalyze(() => new DistributionAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Distribution", () => new DistributionAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var clusters = options.IncludeClustering
-            ? await SafeAnalyze(() => new ClusterAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Clustering", () => new ClusterAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var outliers = options.IncludeOutliers
-            ? await SafeAnalyze(() => new OutlierAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Outliers", () => new OutlierAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var features = options.IncludeFeatures
-            ? await SafeAnalyze(() => new FeatureAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Features", () => new FeatureAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         var pca = options.IncludePca
-            ? await SafeAnalyze(() => new PcaAnalyzer().AnalyzeAsync(adapter, options))
+            ? await SafeAnalyze("Pca", () => new PcaAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
         return new AnalysisResult
@@ -67,18 +69,28 @@ public static class DataLensEngine
             Outliers = outliers,
             Distribution = distribution,
             Features = features,
-            Pca = pca
+            Pca = pca,
+            Warnings = warnings
         };
     }
 
-    private static async Task<T?> SafeAnalyze<T>(Func<Task<T>> analyzer) where T : class
+    private static async Task<T?> SafeAnalyze<T>(
+        string analyzerName,
+        Func<Task<T>> analyzer,
+        List<AnalysisWarning> warnings) where T : class
     {
         try
         {
             return await analyzer();
         }
-        catch
+        catch (InsightException ex)
         {
+            warnings.Add(new AnalysisWarning(analyzerName, ex.Category, ex.Message));
+            return null;
+        }
+        catch (Exception ex)
+        {
+            warnings.Add(new AnalysisWarning(analyzerName, InsightErrorCategory.Unknown, ex.Message));
             return null;
         }
     }
