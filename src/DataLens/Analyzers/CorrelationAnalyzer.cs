@@ -28,7 +28,20 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
             });
         }
 
-        var result = client.Correlation(matrix);
+        // Pearson 상관 행렬 계산
+        double[,]? corrMatrix = null;
+        try
+        {
+            var result = client.Correlation(matrix);
+            corrMatrix = result.Matrix;
+        }
+        catch
+        {
+            return Task.FromResult(new CorrelationReport
+            {
+                ColumnNames = numericCols.ToList()
+            });
+        }
 
         // 고상관 쌍 추출
         var highPairs = new List<CorrelationPair>();
@@ -36,7 +49,7 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
         {
             for (int j = i + 1; j < numericCols.Count; j++)
             {
-                var val = result.Matrix[i, j];
+                var val = corrMatrix[i, j];
                 if (Math.Abs(val) > options.CorrelationThreshold)
                 {
                     highPairs.Add(new CorrelationPair
@@ -88,7 +101,7 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
         return Task.FromResult(new CorrelationReport
         {
             ColumnNames = numericCols.ToList(),
-            Matrix = result.Matrix,
+            Matrix = corrMatrix,
             HighCorrelationPairs = highPairs,
             CategoricalAssociations = categoricalAssociations
         });

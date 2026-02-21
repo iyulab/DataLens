@@ -22,39 +22,39 @@ public static class DataLensEngine
         var adapter = new DataAdapter(dataFrame);
 
         var profile = options.IncludeProfiling
-            ? await new ProfilingAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new ProfilingAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var descriptive = options.IncludeDescriptive
-            ? await new DescriptiveAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new DescriptiveAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var correlation = options.IncludeCorrelation
-            ? await new CorrelationAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new CorrelationAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var regression = options.IncludeRegression
-            ? await new RegressionAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new RegressionAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var distribution = options.IncludeDistribution
-            ? await new DistributionAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new DistributionAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var clusters = options.IncludeClustering
-            ? await new ClusterAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new ClusterAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var outliers = options.IncludeOutliers
-            ? await new OutlierAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new OutlierAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var features = options.IncludeFeatures
-            ? await new FeatureAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new FeatureAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         var pca = options.IncludePca
-            ? await new PcaAnalyzer().AnalyzeAsync(adapter, options)
+            ? await SafeAnalyze(() => new PcaAnalyzer().AnalyzeAsync(adapter, options))
             : null;
 
         return new AnalysisResult
@@ -69,6 +69,18 @@ public static class DataLensEngine
             Features = features,
             Pca = pca
         };
+    }
+
+    private static async Task<T?> SafeAnalyze<T>(Func<Task<T>> analyzer) where T : class
+    {
+        try
+        {
+            return await analyzer();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static async Task<ProfileReport> Profile(string filePath)

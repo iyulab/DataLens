@@ -18,7 +18,7 @@ public static class CsvBridge
         {
             ".csv" or ".tsv" => await DataPipeline.FromCsvAsync(filePath),
             ".json" => DataPipeline.FromData(await LoadJsonAsync(filePath)),
-            _ => throw new NotSupportedException($"Unsupported file format: {ext}")
+            _ => await DataPipeline.FromCsvAsync(filePath) // CSV fallback for unknown extensions
         };
 
         var df = pipeline.ToDataFrame();
