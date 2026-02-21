@@ -21,6 +21,7 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
             {
                 var col = profile.Columns[i];
                 var totalCount = (long)col.ValidCount + (long)col.NullCount;
+                var isNumeric = col.DataType == InsightDataType.Numeric;
                 columns.Add(new ColumnProfile
                 {
                     Name = columnNames[i],
@@ -31,10 +32,10 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
                     NullPercentage = totalCount > 0
                         ? (double)col.NullCount / totalCount * 100.0
                         : 0,
-                    Mean = col.DataType <= 1 ? col.Mean : null,    // numeric types
-                    StdDev = col.DataType <= 1 ? col.StdDev : null,
-                    Min = col.DataType <= 1 ? col.Min : null,
-                    Max = col.DataType <= 1 ? col.Max : null
+                    Mean = isNumeric ? col.Mean : null,
+                    StdDev = isNumeric ? col.StdDev : null,
+                    Min = isNumeric ? col.Min : null,
+                    Max = isNumeric ? col.Max : null
                 });
             }
 
@@ -56,12 +57,12 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
         }
     }
 
-    private static string MapDataType(uint dataType) => dataType switch
+    private static string MapDataType(InsightDataType dataType) => dataType switch
     {
-        0 => "integer",
-        1 => "float",
-        2 => "string",
-        3 => "boolean",
+        InsightDataType.Numeric => "numeric",
+        InsightDataType.Boolean => "boolean",
+        InsightDataType.Categorical => "categorical",
+        InsightDataType.Text => "text",
         _ => "unknown"
     };
 }
