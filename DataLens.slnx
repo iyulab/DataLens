@@ -5,7 +5,11 @@
   <Folder Name="/src/">
     <Project Path="src/DataLens/DataLens.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DataLens.CLI/DataLens.CLI.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/DataLens.Tests/DataLens.Tests.csproj" />
+    <Project Path="tests/DataLens.CLI.Tests/DataLens.CLI.Tests.csproj" />
   </Folder>
 </Solution>
