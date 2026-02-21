@@ -85,12 +85,21 @@ public static class DataLensEngine
         }
         catch (InsightException ex)
         {
-            warnings.Add(new AnalysisWarning(analyzerName, ex.Category, ex.Message));
+            // UInsight >= 0.3.2가 배포되면 ex.Category로 교체 가능
+            var category = ex.ErrorCode switch
+            {
+                -5 => "InsufficientData",
+                -6 => "InvalidParameter",
+                -7 => "DegenerateData",
+                -8 => "ComputationFailed",
+                _ => "AnalysisFailed"
+            };
+            warnings.Add(new AnalysisWarning(analyzerName, category, ex.Message));
             return null;
         }
         catch (Exception ex)
         {
-            warnings.Add(new AnalysisWarning(analyzerName, InsightErrorCategory.Unknown, ex.Message));
+            warnings.Add(new AnalysisWarning(analyzerName, "Unexpected", ex.Message));
             return null;
         }
     }

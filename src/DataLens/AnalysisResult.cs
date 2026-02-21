@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DataLens.Models;
 using DataLens.Serialization;
-using UInsight;
 
 namespace DataLens;
 

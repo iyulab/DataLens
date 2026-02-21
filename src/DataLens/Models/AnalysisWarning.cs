@@ -1,5 +1,3 @@
-using UInsight;
-
 namespace DataLens.Models;
 
 /// <summary>
@@ -8,8 +6,12 @@ namespace DataLens.Models;
 public record AnalysisWarning(
     /// <summary>실패한 분석기 이름 (예: "Correlation", "Pca").</summary>
     string Analyzer,
-    /// <summary>UInsight 에러 카테고리 또는 "Unexpected".</summary>
-    InsightErrorCategory Category,
+    /// <summary>
+    /// 에러 카테고리. UInsight &gt;= 0.3.2 배포 시 세분화됨.
+    /// 현재 가능한 값: AnalysisFailed, InsufficientData, InvalidParameter,
+    /// DegenerateData, ComputationFailed, Unexpected.
+    /// </summary>
+    string Category,
     /// <summary>원본 에러 메시지.</summary>
     string Message
 );
