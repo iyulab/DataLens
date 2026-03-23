@@ -33,6 +33,9 @@ internal static class AnalysisPresenter
 
         if (result.Pca is not null)
             RenderPca(result.Pca);
+
+        if (result.Changepoints is not null)
+            RenderChangepoints(result.Changepoints);
     }
 
     public static void RenderProfile(ProfileReport report)
@@ -405,6 +408,57 @@ internal static class AnalysisPresenter
             }
 
             AnsiConsole.Write(table);
+        }
+
+        AnsiConsole.WriteLine();
+    }
+
+    public static void RenderChangepoints(ChangepointReport report)
+    {
+        AnsiConsole.MarkupLine("[bold underline]Changepoint Detection (PELT)[/]");
+        AnsiConsole.WriteLine();
+
+        if (report.Columns.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[dim]No changepoints detected.[/]");
+            AnsiConsole.WriteLine();
+            return;
+        }
+
+        foreach (var col in report.Columns)
+        {
+            var cpCount = col.Changepoints.Length;
+            var cpColor = cpCount > 0 ? "yellow" : "dim";
+            AnsiConsole.MarkupLine($"  [bold]{Markup.Escape(col.Name)}[/]  (N={col.SampleSize:N0}, [{cpColor}]{cpCount} changepoint(s)[/])");
+
+            if (cpCount > 0)
+            {
+                AnsiConsole.MarkupLine($"    Positions: [{cpColor}]{string.Join(", ", col.Changepoints)}[/]");
+
+                if (col.Segments.Count > 0)
+                {
+                    var table = new Table()
+                        .Border(TableBorder.Simple)
+                        .AddColumn("Segment")
+                        .AddColumn(new TableColumn("Range").RightAligned())
+                        .AddColumn(new TableColumn("Length").RightAligned())
+                        .AddColumn(new TableColumn("Mean").RightAligned())
+                        .AddColumn(new TableColumn("Std").RightAligned());
+
+                    for (int i = 0; i < col.Segments.Count; i++)
+                    {
+                        var seg = col.Segments[i];
+                        table.AddRow(
+                            $"S{i + 1}",
+                            $"[{seg.Start}, {seg.End})",
+                            seg.Length.ToString("N0"),
+                            seg.Mean.ToString("G6"),
+                            seg.StdDev.ToString("G4"));
+                    }
+
+                    AnsiConsole.Write(table);
+                }
+            }
         }
 
         AnsiConsole.WriteLine();

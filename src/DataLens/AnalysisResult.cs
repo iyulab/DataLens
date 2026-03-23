@@ -16,7 +16,8 @@ public enum Section
     Outliers,
     Distribution,
     Features,
-    Pca
+    Pca,
+    Changepoints
 }
 
 /// <summary>
@@ -33,6 +34,7 @@ public class AnalysisResult
     public DistributionReport? Distribution { get; init; }
     public FeatureReport? Features { get; init; }
     public PcaReport? Pca { get; init; }
+    public ChangepointReport? Changepoints { get; init; }
 
     /// <summary>
     /// 분석 중 발생한 비치명적 경고 목록.
@@ -58,6 +60,7 @@ public class AnalysisResult
             Section.Distribution => Distribution,
             Section.Features => Features,
             Section.Pca => Pca,
+            Section.Changepoints => Changepoints,
             _ => throw new ArgumentOutOfRangeException(nameof(section))
         };
 

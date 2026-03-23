@@ -14,6 +14,7 @@ public class AnalysisOptions
     public bool IncludeDistribution { get; set; } = true;
     public bool IncludeFeatures { get; set; } = true;
     public bool IncludePca { get; set; } = true;
+    public bool IncludeChangepoints { get; set; } = true;
 
     /// <summary>
     /// 상관 분석에서 "고상관"으로 간주할 임계값 (|r| > threshold).
@@ -44,6 +45,21 @@ public class AnalysisOptions
     /// 클러스터링 최대 K (GapStatistic 탐색 범위).
     /// </summary>
     public uint MaxClusters { get; set; } = 10;
+
+    /// <summary>
+    /// PELT 변화점 탐지 비용 함수. 0 = L2 (mean change), 1 = Normal (mean+variance).
+    /// </summary>
+    public uint ChangepointCost { get; set; } = 0;
+
+    /// <summary>
+    /// PELT 변화점 패널티. 0.0이면 BIC 자동 계산.
+    /// </summary>
+    public double ChangepointPenalty { get; set; } = 0.0;
+
+    /// <summary>
+    /// PELT 최소 세그먼트 길이 (>= 2).
+    /// </summary>
+    public uint ChangepointMinSegmentLength { get; set; } = 2;
 
     public static AnalysisOptions Default => new();
 }

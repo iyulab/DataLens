@@ -45,6 +45,7 @@ public class IntegrationTests
             IncludeOutliers = true,
             IncludeFeatures = true,
             IncludePca = true,
+            IncludeChangepoints = true,
             CorrelationThreshold = 0.7,
         };
 

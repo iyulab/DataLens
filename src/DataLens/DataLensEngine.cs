@@ -59,6 +59,10 @@ public static class DataLensEngine
             ? await SafeAnalyze("Pca", () => new PcaAnalyzer().AnalyzeAsync(adapter, options), warnings)
             : null;
 
+        var changepoints = options.IncludeChangepoints
+            ? await SafeAnalyze("Changepoints", () => new ChangepointAnalyzer().AnalyzeAsync(adapter, options), warnings)
+            : null;
+
         return new AnalysisResult
         {
             Profile = profile,
@@ -70,6 +74,7 @@ public static class DataLensEngine
             Distribution = distribution,
             Features = features,
             Pca = pca,
+            Changepoints = changepoints,
             Warnings = warnings
         };
     }

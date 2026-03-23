@@ -16,6 +16,7 @@ internal static class AnalyzeCommand
         ["outlier"] = o => o.IncludeOutliers = true,
         ["feature"] = o => o.IncludeFeatures = true,
         ["pca"] = o => o.IncludePca = true,
+        ["changepoints"] = o => o.IncludeChangepoints = true,
     };
 
     public static Command Create()
@@ -80,6 +81,7 @@ internal static class AnalyzeCommand
             options.IncludeOutliers = false;
             options.IncludeFeatures = false;
             options.IncludePca = false;
+            options.IncludeChangepoints = false;
 
             var names = include.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             foreach (var name in names)
