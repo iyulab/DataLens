@@ -8,9 +8,4 @@
     <ProjectReference Include="..\..\src\DataLens\DataLens.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Explicit transitive pin to avoid NU1903 -->
-    <PackageReference Include="System.Security.Cryptography.Xml" />
-  </ItemGroup>
-
 </Project>
