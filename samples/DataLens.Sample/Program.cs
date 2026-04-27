@@ -1,15 +1,59 @@
 using DataLens;
+using DataLens.Sample.Examples;
+
+// CLI dispatcher.
+// Default mode: run the full pipeline against a CSV file (matches the
+// historical CLI demo). `--example=<name>` runs a specific README snippet
+// for ad-hoc verification — the snippets themselves compile unconditionally,
+// which is the actual README ↔ code drift safety net.
 
 if (args.Length == 0)
 {
-    Console.WriteLine("Usage: DataLens.Sample <csv-file-path> [target-column]");
-    Console.WriteLine();
-    Console.WriteLine("Examples:");
-    Console.WriteLine("  DataLens.Sample data.csv");
-    Console.WriteLine("  DataLens.Sample data.csv OutputPower");
+    PrintUsage();
     return;
 }
 
+if (args[0].StartsWith("--example=", StringComparison.Ordinal))
+{
+    var name = args[0]["--example=".Length..];
+    var inputPath = args.Length > 1 ? args[1] : null;
+    if (inputPath is null && name is not "poco")
+    {
+        Console.Error.WriteLine($"--example={name} requires a CSV path as the second argument.");
+        return;
+    }
+
+    Func<Task> run = name switch
+    {
+        "quick-start"   => () => QuickStartExample.RunOneLineAsync(inputPath!),
+        "poco"          => () => QuickStartExample.RunPocoCollectionsAsync(),
+        "programmatic"  => () => ProgrammaticAccessExample.RunAsync(inputPath!),
+        "selecting"     => () => SelectingAnalysesExample.RunAsync(inputPath!),
+        "profiling"     => () => ModuleExamples.ProfilingAsync(inputPath!),
+        "descriptive"   => () => ModuleExamples.DescriptiveAsync(inputPath!),
+        "correlation"   => () => ModuleExamples.CorrelationAsync(inputPath!),
+        "regression"    => () => ModuleExamples.RegressionAsync(inputPath!),
+        "cluster"       => () => ModuleExamples.ClusterAsync(inputPath!),
+        "outliers"      => () => ModuleExamples.OutliersAsync(inputPath!),
+        "features"      => () => ModuleExamples.FeatureImportanceAsync(inputPath!),
+        "pca"           => () => ModuleExamples.PcaAsync(inputPath!),
+        "changepoint"   => () => ModuleExamples.ChangepointAsync(inputPath!),
+        "output"        => () => OutputExample.RunAsync(inputPath!),
+        "fileprepper"   => () => IntegrationExamples.FilePrepperToDataLensAsync(inputPath!),
+        "mloop"         => () => IntegrationExamples.DataLensToMLoopAsync(inputPath!),
+        _ => () =>
+        {
+            Console.Error.WriteLine($"Unknown example: {name}");
+            PrintUsage();
+            return Task.CompletedTask;
+        }
+    };
+
+    await run();
+    return;
+}
+
+// Default mode — full pipeline, kept identical to the historical CLI demo.
 var filePath = args[0];
 var targetColumn = args.Length > 1 ? args[1] : null;
 
@@ -25,7 +69,6 @@ var options = new AnalysisOptions
 
 var result = await DataLensEngine.Analyze(filePath, options);
 
-// 프로파일 요약
 if (result.Profile != null)
 {
     Console.WriteLine($"== Profile ==");
@@ -37,7 +80,6 @@ if (result.Profile != null)
     Console.WriteLine();
 }
 
-// 기술통계 요약
 if (result.Descriptive != null)
 {
     Console.WriteLine($"== Descriptive Statistics ==");
@@ -48,7 +90,6 @@ if (result.Descriptive != null)
     Console.WriteLine();
 }
 
-// 상관분석 요약
 if (result.Correlation?.HighCorrelationPairs?.Count > 0)
 {
     Console.WriteLine($"== High Correlation Pairs ==");
@@ -59,7 +100,6 @@ if (result.Correlation?.HighCorrelationPairs?.Count > 0)
     Console.WriteLine();
 }
 
-// 클러스터 요약
 if (result.Clusters?.KMeans != null)
 {
     Console.WriteLine($"== Clustering ==");
@@ -72,7 +112,6 @@ if (result.Clusters?.KMeans != null)
     Console.WriteLine();
 }
 
-// 이상치 요약
 if (result.Outliers != null)
 {
     Console.WriteLine($"== Outliers ==");
@@ -80,7 +119,21 @@ if (result.Outliers != null)
     Console.WriteLine();
 }
 
-// JSON 출력
 var jsonPath = Path.ChangeExtension(filePath, ".analysis.json");
 await result.ToJsonAsync(jsonPath);
 Console.WriteLine($"Full analysis saved to: {jsonPath}");
+
+static void PrintUsage()
+{
+    Console.WriteLine("Usage:");
+    Console.WriteLine("  DataLens.Sample <csv-file-path> [target-column]");
+    Console.WriteLine("  DataLens.Sample --example=<name> [csv-file-path]");
+    Console.WriteLine();
+    Console.WriteLine("Examples (mirrors README code blocks):");
+    Console.WriteLine("  --example=quick-start    --example=poco         --example=programmatic");
+    Console.WriteLine("  --example=selecting      --example=output");
+    Console.WriteLine("  --example=profiling      --example=descriptive  --example=correlation");
+    Console.WriteLine("  --example=regression     --example=cluster      --example=outliers");
+    Console.WriteLine("  --example=features       --example=pca          --example=changepoint");
+    Console.WriteLine("  --example=fileprepper    --example=mloop");
+}

@@ -51,8 +51,9 @@ var analysis = await DataLensEngine.Analyze("manufacturing_data.csv");
 await analysis.ToJsonAsync("results.json");
 ```
 
-> HTML report generation (`ToHtml(...)`) is planned for a future release. See
-> [issue: html-report-missing](claudedocs/issues/ISSUE-DataLens-20260427-html-report-missing.md).
+> HTML / chart rendering is intentionally out of scope. Pair the `AnalysisResult`
+> with a renderer of your choice (Plotly.NET, ScottPlot, OxyPlot) or a future
+> companion package such as `DataLens.Reports.Plotly`.
 
 ### POCO Collections (no file required)
 
@@ -183,13 +184,17 @@ foreach (var pair in corr.HighCorrelationPairs)
 
 ### 4. Regression Analysis
 
-OLS-based regression against `AnalysisOptions.TargetColumn`.
+Per-feature simple regression against `AnalysisOptions.TargetColumn` — one
+`RegressionEntry` per feature.
 
 ```csharp
 var options = new AnalysisOptions { TargetColumn = "S_OutputPower", IncludeRegression = true };
 var analysis = await DataLensEngine.Analyze("data.csv", options);
 var regression = analysis.Regression!;
-Console.WriteLine($"R²={regression.RSquared:F4}");
+foreach (var entry in regression.Entries)
+{
+    Console.WriteLine($"{entry.FeatureColumn}: slope={entry.Slope:F4}, R²={entry.RSquared:F4}");
+}
 ```
 
 ### 5. Cluster Analysis
@@ -260,7 +265,8 @@ var analysis = await DataLensEngine.Analyze("timeseries.csv", options);
 
 ## Output
 
-DataLens currently emits results as JSON. HTML report generation is planned.
+DataLens emits results as JSON. Chart / HTML rendering is delegated to renderer
+packages (see *Out of Scope*).
 
 ```csharp
 // Full result
@@ -282,8 +288,8 @@ var corrJson = analysis.ToJson(Section.Correlation);
 │                                          │
 │  ┌──────────┐  ┌───────────────────────┐ │
 │  │ Analysis  │  │ JSON Serializer       │ │
-│  │ Pipeline  │  │  (HTML reports        │ │
-│  │           │  │   planned)            │ │
+│  │ Pipeline  │  │  (renderer-agnostic)  │ │
+│  │           │  │                       │ │
 │  └─────┬────┘  └───────────┬───────────┘ │
 │        │                   │             │
 ├────────┴───────────────────┴─────────────┤
@@ -360,11 +366,16 @@ foreach (var pair in analysis.Correlation!.HighCorrelationPairs)
 - Deep learning (CNN, LSTM, Autoencoder)
 - Real-time streaming analysis
 - Interactive notebook environments
+- HTML / chart rendering — pair `AnalysisResult` with a renderer of your choice
+  (Plotly.NET, ScottPlot, OxyPlot, or a future companion package such as
+  `DataLens.Reports.Plotly`). The core stays JSON-first.
 
 **Planned (not yet shipped):**
-- HTML reports with interactive charts (Plotly.js)
 - Encoding auto-detection in `CsvBridge` — depends on FilePrepper 0.7.0
-- Fluent facade API + `examples/` build verification
+
+Every code block in this README is exercised by `samples/DataLens.Sample`, so
+build failures there fail the build. If a snippet here drifts from the actual
+API, CI catches it.
 
 ## Requirements
 
