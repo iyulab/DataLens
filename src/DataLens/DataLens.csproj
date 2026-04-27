@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="FilePrepper" />
     <PackageReference Include="UInsight" />
+    <!-- Explicit transitive pin to avoid NU1903; PrivateAssets keeps it out of the published nupkg dependencies -->
+    <PackageReference Include="System.Security.Cryptography.Xml" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
