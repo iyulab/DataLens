@@ -47,6 +47,23 @@ public class AnalysisOptions
     public uint MaxClusters { get; set; } = 10;
 
     /// <summary>
+    /// MiniBatchKMeans로 자동 전환할 행 수 임계값.
+    /// 데이터 행 수가 이 값 이상이면 KMeans 대신 MiniBatchKMeans 사용.
+    /// 0이면 항상 KMeans 사용.
+    /// </summary>
+    public uint MiniBatchKMeansRowThreshold { get; set; } = 10000;
+
+    /// <summary>
+    /// HDBSCAN 최소 클러스터 크기.
+    /// </summary>
+    public uint HdbscanMinClusterSize { get; set; } = 5;
+
+    /// <summary>
+    /// HDBSCAN 최소 샘플 수 (밀도 추정). 0이면 MinClusterSize와 동일하게 사용.
+    /// </summary>
+    public uint HdbscanMinSamples { get; set; } = 0;
+
+    /// <summary>
     /// PELT 변화점 탐지 비용 함수. 0 = L2 (mean change), 1 = Normal (mean+variance).
     /// </summary>
     public uint ChangepointCost { get; set; } = 0;

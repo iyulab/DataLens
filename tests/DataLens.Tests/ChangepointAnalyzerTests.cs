@@ -206,4 +206,69 @@ public class ChangepointAnalyzerTests
         Assert.Contains("changepoints", json);
         Assert.Contains("segments", json);
     }
+
+    [Fact]
+    public async Task SingleColumn_NoMultivariateResult()
+    {
+        var data = new List<Dictionary<string, string>>();
+        var rng = new Random(42);
+        for (int i = 0; i < 100; i++)
+        {
+            double value = i < 50 ? 10 + rng.NextDouble() : 50 + rng.NextDouble();
+            data.Add(new Dictionary<string, string> { ["Value"] = value.ToString("F4") });
+        }
+
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var report = await new ChangepointAnalyzer().AnalyzeAsync(adapter, AnalysisOptions.Default);
+
+        Assert.NotNull(report);
+        Assert.Null(report.Multivariate);
+    }
+
+    [Fact]
+    public async Task MultipleColumns_PopulatesMultivariateResult()
+    {
+        var data = new List<Dictionary<string, string>>();
+        var rng = new Random(42);
+        for (int i = 0; i < 100; i++)
+        {
+            double x = i < 50 ? 10 + rng.NextDouble() : 50 + rng.NextDouble();
+            double y = i < 50 ? 1 + rng.NextDouble() : 5 + rng.NextDouble();
+            data.Add(new Dictionary<string, string>
+            {
+                ["X"] = x.ToString("F4"),
+                ["Y"] = y.ToString("F4")
+            });
+        }
+
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var report = await new ChangepointAnalyzer().AnalyzeAsync(adapter, AnalysisOptions.Default);
+
+        Assert.NotNull(report);
+        Assert.NotNull(report.Multivariate);
+        Assert.Equal(2, report.Multivariate.Columns.Count);
+        Assert.Equal(100, report.Multivariate.SampleSize);
+        Assert.True(report.Multivariate.Changepoints.Length >= 1, "Should detect at least one shared changepoint");
+        Assert.Contains(report.Multivariate.Changepoints, cp => cp >= 45 && cp <= 55);
+    }
+
+    [Fact]
+    public async Task InsufficientMultivariateData_NullMultivariate()
+    {
+        var data = new List<Dictionary<string, string>>
+        {
+            new() { ["X"] = "1.0", ["Y"] = "1.0" },
+            new() { ["X"] = "2.0", ["Y"] = "2.0" },
+            new() { ["X"] = "3.0", ["Y"] = "3.0" }
+        };
+
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var report = await new ChangepointAnalyzer().AnalyzeAsync(adapter, AnalysisOptions.Default);
+
+        Assert.NotNull(report);
+        Assert.Null(report.Multivariate);
+    }
 }

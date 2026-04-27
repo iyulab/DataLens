@@ -52,7 +52,52 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
             }
         }
 
-        return Task.FromResult(new ChangepointReport { Columns = results });
+        // 다변량 PELT (모든 숫자 컬럼 동시 분석)
+        MultivariateChangepointResult? multivariate = null;
+        if (numericColumns.Count >= 2)
+        {
+            try
+            {
+                var matrix = adapter.ToCleanMatrix();
+                int nRows = matrix.GetLength(0);
+                int nCols = matrix.GetLength(1);
+                if (nRows >= options.ChangepointMinSegmentLength * 2)
+                {
+                    // double[,] → double[][] (signal channels: 컬럼별 1차원 배열의 배열)
+                    var signals = new double[nCols][];
+                    for (int j = 0; j < nCols; j++)
+                    {
+                        signals[j] = new double[nRows];
+                        for (int i = 0; i < nRows; i++)
+                            signals[j][i] = matrix[i, j];
+                    }
+
+                    var multiResult = client.PeltMulti(
+                        signals,
+                        cost: options.ChangepointCost,
+                        penalty: options.ChangepointPenalty,
+                        minSegmentLen: options.ChangepointMinSegmentLength);
+
+                    multivariate = new MultivariateChangepointResult
+                    {
+                        SampleSize = nRows,
+                        Columns = numericColumns.ToList(),
+                        Changepoints = multiResult.Changepoints,
+                        NSegments = multiResult.NSegments
+                    };
+                }
+            }
+            catch
+            {
+                // 다변량 실패는 단변량 결과를 막지 않는다
+            }
+        }
+
+        return Task.FromResult(new ChangepointReport
+        {
+            Columns = results,
+            Multivariate = multivariate
+        });
     }
 
     private static List<SegmentSummary> BuildSegmentSummaries(double[] data, uint[] changepoints)

@@ -33,7 +33,12 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
         KMeansReport? kmeansReport = null;
         try
         {
-            var kmeans = client.KMeans(matrix, optimalK);
+            // KMeans / MiniBatchKMeans 자동 분기
+            bool useMiniBatch = options.MiniBatchKMeansRowThreshold > 0
+                && (uint)matrix.GetLength(0) >= options.MiniBatchKMeansRowThreshold;
+            var kmeans = useMiniBatch
+                ? client.MiniBatchKMeans(matrix, optimalK)
+                : client.KMeans(matrix, optimalK);
             var clusterSizes = kmeans.Labels
                 .GroupBy(l => l)
                 .Select(g => new ClusterSummary
@@ -51,7 +56,8 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 Wcss = kmeans.Wcss,
                 Iterations = kmeans.Iterations,
                 Labels = kmeans.Labels,
-                ClusterSizes = clusterSizes
+                ClusterSizes = clusterSizes,
+                UsedMiniBatch = useMiniBatch
             };
         }
         catch { }
@@ -84,13 +90,32 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
         }
         catch { }
 
+        // HDBSCAN
+        HdbscanReport? hdbscanReport = null;
+        try
+        {
+            uint minSamples = options.HdbscanMinSamples == 0
+                ? options.HdbscanMinClusterSize
+                : options.HdbscanMinSamples;
+            var hdb = client.Hdbscan(matrix, options.HdbscanMinClusterSize, minSamples);
+            hdbscanReport = new HdbscanReport
+            {
+                NClusters = hdb.NClusters,
+                NoiseCount = hdb.NoiseCount,
+                Labels = hdb.Labels,
+                Probabilities = hdb.Probabilities
+            };
+        }
+        catch { }
+
         return Task.FromResult(new ClusterReport
         {
             OptimalK = optimalK,
             GapValues = gapValues,
             KMeans = kmeansReport,
             Dbscan = dbscanReport,
-            Hierarchical = hierarchicalReport
+            Hierarchical = hierarchicalReport,
+            Hdbscan = hdbscanReport
         });
     }
 }
