@@ -5,9 +5,25 @@ namespace DataLens.Adapters;
 
 /// <summary>
 /// CLR 값 / <see cref="JsonElement"/> 를 FilePrepper DataFrame 이 소비하는 문자열 표현으로 변환하는 단일 출처 매퍼.
-/// 구현은 demand-driven minimal subset 에 한정한다 — numeric / decimal / bool / string / DateTime / Nullable&lt;T&gt;.
-/// 그 외 타입(Guid / Enum / DateOnly / TimeOnly / DateTimeOffset / TimeSpan / Uri / IPAddress 등)은 string fallback + warning.
 /// </summary>
+/// <remarks>
+/// <para>
+/// 1급 지원: numeric / decimal / bool / string / DateTime / DateTimeOffset / TimeSpan / enum / Nullable&lt;T&gt;.
+/// </para>
+/// <para>
+/// <b>enum 표현 정책</b>: enum 값은 <see cref="Convert.ToInt64(object)"/> 으로 underlying numeric value 로 변환된다
+/// (ordinal encoding). 의도는 categorical analyzer 도입 전까지도 Descriptive/Outlier/Correlation 분석에서
+/// 활용 가능하도록 하기 위함. enum name string ("Pending", "Completed") 로 export 하면 80%-numeric 휴리스틱이
+/// 모든 enum 컬럼을 categorical 로 분류해 사실상 분석에서 배제된다.
+/// 추후 categorical analyzer 가 1급화되면 정책 재평가.
+/// </para>
+/// <para>
+/// <b>TimeSpan</b>: <see cref="TimeSpan.TotalSeconds"/> 로 변환. duration 의 통계 분석을 1급 지원.
+/// </para>
+/// <para>
+/// 그 외 타입(Guid / DateOnly / TimeOnly / Uri / IPAddress 등)은 string fallback + warning.
+/// </para>
+/// </remarks>
 internal static class DefaultTypeMapper
 {
     /// <summary>
@@ -52,6 +68,29 @@ internal static class DefaultTypeMapper
             return utc.ToString("o", CultureInfo.InvariantCulture);
         }
 
+        if (t == typeof(DateTimeOffset))
+        {
+            // DateTime UTC 표현과 동등 — offset 정보는 UTC 변환으로 흡수.
+            return ((DateTimeOffset)value).UtcDateTime.ToString("o", CultureInfo.InvariantCulture);
+        }
+
+        if (t == typeof(TimeSpan))
+        {
+            // TotalSeconds (double) 로 변환 → numeric 분석 1급.
+            return ((TimeSpan)value).TotalSeconds.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        if (t.IsEnum)
+        {
+            // underlying numeric value 로 변환 → ordinal encoding.
+            // ulong underlying 도 long 으로 변환 (DataLens 의 numeric 분석은 double 기반이므로 손실 무시).
+            var underlying = Enum.GetUnderlyingType(t);
+            if (underlying == typeof(ulong))
+                return ((ulong)Convert.ChangeType(value, typeof(ulong), CultureInfo.InvariantCulture))
+                    .ToString(CultureInfo.InvariantCulture);
+            return Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+        }
+
         // Demand 누적 후 승격 대상 — 현재는 ToString fallback + warning flag.
         unsupportedType = true;
         return value.ToString() ?? string.Empty;
@@ -78,11 +117,13 @@ internal static class DefaultTypeMapper
     }
 
     /// <summary>
-    /// CLR 타입이 미니멀 정책에 포함되는지 검사. <c>false</c> 면 호출자가 warning 을 발생시킬 수 있다.
+    /// CLR 타입이 1급 정책에 포함되는지 검사. <c>false</c> 면 호출자가 warning 을 발생시킬 수 있다.
     /// </summary>
     public static bool IsSupported(Type type)
     {
         var t = Nullable.GetUnderlyingType(type) ?? type;
+
+        if (t.IsEnum) return true;
 
         return t == typeof(string)
             || t == typeof(bool)
@@ -90,6 +131,8 @@ internal static class DefaultTypeMapper
             || t == typeof(int) || t == typeof(long) || t == typeof(short)
             || t == typeof(byte) || t == typeof(sbyte)
             || t == typeof(uint) || t == typeof(ulong) || t == typeof(ushort)
-            || t == typeof(DateTime);
+            || t == typeof(DateTime)
+            || t == typeof(DateTimeOffset)
+            || t == typeof(TimeSpan);
     }
 }

@@ -9,26 +9,58 @@ namespace DataLens.Adapters;
 public class DataAdapter
 {
     private readonly DataFrame _dataFrame;
+    private readonly List<string> _effectiveColumns = [];
     private readonly List<string> _numericColumns = [];
     private readonly List<string> _categoricalColumns = [];
 
     public IReadOnlyList<string> NumericColumns => _numericColumns;
     public IReadOnlyList<string> CategoricalColumns => _categoricalColumns;
-    public IReadOnlyList<string> AllColumns => _dataFrame.ColumnNames;
+    /// <summary>
+    /// 분석 대상 컬럼 (Include/Exclude 적용 후). 미적용 시 원본 DataFrame 의 모든 컬럼.
+    /// </summary>
+    public IReadOnlyList<string> AllColumns => _effectiveColumns;
+    /// <summary>
+    /// 원본 DataFrame. <see cref="AllColumns"/>/<see cref="ColumnCount"/> 와 컬럼 수가 다를 수 있다 (Include/Exclude 미적용).
+    /// </summary>
     public DataFrame DataFrame => _dataFrame;
     public int RowCount => _dataFrame.RowCount;
-    public int ColumnCount => _dataFrame.ColumnCount;
+    public int ColumnCount => _effectiveColumns.Count;
 
     public DataAdapter(DataFrame dataFrame)
+        : this(dataFrame, includeColumns: null, excludeColumns: null) { }
+
+    /// <summary>
+    /// <paramref name="includeColumns"/> / <paramref name="excludeColumns"/> 로 분석 대상 컬럼을 제한한다.
+    /// 둘 다 지정 시 Include 통과 + Exclude 미해당인 컬럼만 numeric/categorical 분류에 포함.
+    /// 비-존재 컬럼명은 조용히 무시된다.
+    /// </summary>
+    public DataAdapter(
+        DataFrame dataFrame,
+        IReadOnlyList<string>? includeColumns,
+        IReadOnlyList<string>? excludeColumns)
     {
         _dataFrame = dataFrame ?? throw new ArgumentNullException(nameof(dataFrame));
-        ClassifyColumns();
+        ClassifyColumns(includeColumns, excludeColumns);
     }
 
-    private void ClassifyColumns()
+    private void ClassifyColumns(
+        IReadOnlyList<string>? includeColumns,
+        IReadOnlyList<string>? excludeColumns)
     {
+        var includeSet = includeColumns is { Count: > 0 }
+            ? new HashSet<string>(includeColumns, StringComparer.Ordinal)
+            : null;
+        var excludeSet = excludeColumns is { Count: > 0 }
+            ? new HashSet<string>(excludeColumns, StringComparer.Ordinal)
+            : null;
+
         foreach (var col in _dataFrame.ColumnNames)
         {
+            if (includeSet is not null && !includeSet.Contains(col)) continue;
+            if (excludeSet is not null && excludeSet.Contains(col)) continue;
+
+            _effectiveColumns.Add(col);
+
             var values = _dataFrame.GetColumn(col);
             int numericCount = 0;
             int totalNonEmpty = 0;
@@ -154,10 +186,38 @@ public class DataAdapter
 
     /// <summary>
     /// DataFrame을 CSV 문자열로 변환 (UInsight ProfileCsv용).
+    /// Include/Exclude 가 적용된 effective 컬럼만 export 한다.
     /// </summary>
     public string ToCsvString()
     {
-        return _dataFrame.ToCsv();
+        if (_effectiveColumns.Count == _dataFrame.ColumnCount)
+            return _dataFrame.ToCsv();
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < _effectiveColumns.Count; i++)
+        {
+            if (i > 0) sb.Append(',');
+            sb.Append(EscapeCsvCell(_effectiveColumns[i]));
+        }
+        sb.Append('\n');
+
+        foreach (var row in _dataFrame.Rows)
+        {
+            for (int i = 0; i < _effectiveColumns.Count; i++)
+            {
+                if (i > 0) sb.Append(',');
+                row.TryGetValue(_effectiveColumns[i], out var val);
+                sb.Append(EscapeCsvCell(val ?? string.Empty));
+            }
+            sb.Append('\n');
+        }
+        return sb.ToString();
+    }
+
+    private static string EscapeCsvCell(string value)
+    {
+        if (value.IndexOfAny(['"', ',', '\n', '\r']) < 0) return value;
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
 
     /// <summary>

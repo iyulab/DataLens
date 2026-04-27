@@ -78,5 +78,23 @@ public class AnalysisOptions
     /// </summary>
     public uint ChangepointMinSegmentLength { get; set; } = 2;
 
+    /// <summary>
+    /// 분석 대상 컬럼 allowlist (DataFrame 적재 후 단계).
+    /// null/empty 면 모든 컬럼이 분석 대상. 지정 시 이 목록 외 컬럼은 numeric/categorical 분류에서 제외된다.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="EnumerableSourceOptions{T}.IncludeProperties"/> 와 의미가 다르다 — 후자는 DataFrame
+    /// 으로 적재할 *POCO 속성* 을 제한, 전자는 분석에 사용할 *DataFrame 컬럼* 을 제한한다.
+    /// CSV/JSON 파일 입력에서도 일관 동작한다.
+    /// </remarks>
+    public IReadOnlyList<string>? IncludeColumns { get; set; }
+
+    /// <summary>
+    /// 분석 대상 컬럼 denylist (DataFrame 적재 후 단계).
+    /// ID/FK 식별자 컬럼처럼 적재는 하되 분석에서만 빼야 하는 컬럼에 사용한다.
+    /// <see cref="IncludeColumns"/> 와 동시 지정 시 둘 다 적용 (Include 통과 + Exclude 미해당).
+    /// </summary>
+    public IReadOnlyList<string>? ExcludeColumns { get; set; }
+
     public static AnalysisOptions Default => new();
 }

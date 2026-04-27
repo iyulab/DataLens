@@ -117,10 +117,10 @@ public class EnumerableSourceTests
 
         // Build still succeeds.
         Assert.NotNull(result.Profile);
-        // Warnings include EnumerableSource entries for Id (Guid) and When (Enum).
+        // Guid 는 여전히 unsupported. enum (DayOfWeek) 은 0.8.0 부터 1급 지원이므로 warning 발산하지 않는다.
         var sourceWarnings = result.Warnings.Where(w => w.Analyzer == "EnumerableSource").ToList();
         Assert.Contains(sourceWarnings, w => w.Message.Contains("Id"));
-        Assert.Contains(sourceWarnings, w => w.Message.Contains("When"));
+        Assert.DoesNotContain(sourceWarnings, w => w.Message.Contains("When"));
     }
 
     [Fact]
