@@ -19,9 +19,35 @@ public static class DataLensEngine
 
     public static async Task<AnalysisResult> Analyze(DataFrame dataFrame, AnalysisOptions? options = null)
     {
+        return await AnalyzeCore(dataFrame, options, sourceWarnings: null);
+    }
+
+    /// <summary>
+    /// POCO / dynamic / <see cref="IDictionary{TKey, TValue}"/> / <see cref="System.Dynamic.ExpandoObject"/>
+    /// 컬렉션을 직접 분석한다. 입력은 한 번만 enumerate 된다.
+    /// </summary>
+    public static async Task<AnalysisResult> Analyze<T>(
+        IEnumerable<T> source,
+        AnalysisOptions? options = null,
+        EnumerableSourceOptions<T>? sourceOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (source is null) throw new ArgumentNullException(nameof(source));
+
+        var items = source as IReadOnlyList<T> ?? source.ToList();
+        var (dataFrame, warnings) = EnumerableSourceBuilder.Build(items, sourceOptions, cancellationToken);
+        return await AnalyzeCore(dataFrame, options, warnings);
+    }
+
+    private static async Task<AnalysisResult> AnalyzeCore(
+        DataFrame dataFrame,
+        AnalysisOptions? options,
+        IReadOnlyList<AnalysisWarning>? sourceWarnings)
+    {
         options ??= AnalysisOptions.Default;
         var adapter = new DataAdapter(dataFrame);
         var warnings = new List<AnalysisWarning>();
+        if (sourceWarnings is { Count: > 0 }) warnings.AddRange(sourceWarnings);
 
         var profile = options.IncludeProfiling
             ? await SafeAnalyze("Profiling", () => new ProfilingAnalyzer().AnalyzeAsync(adapter, options), warnings)

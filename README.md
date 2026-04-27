@@ -54,6 +54,29 @@ await analysis.ToJsonAsync("results.json");
 > HTML report generation (`ToHtml(...)`) is planned for a future release. See
 > [issue: html-report-missing](claudedocs/issues/ISSUE-DataLens-20260427-html-report-missing.md).
 
+### POCO Collections (no file required)
+
+```csharp
+using DataLens;
+
+record Sale(DateTime 주문일자, decimal 금액, string 고객명);
+
+var sales = new List<Sale>
+{
+    new(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), 1000m, "갑"),
+    new(new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc), 2500m, "을"),
+    // ...
+};
+
+var analysis = await DataLensEngine.Analyze(sales);
+```
+
+`IEnumerable<T>` is a first-class input. POCO properties are extracted via
+reflection (`[JsonIgnore]` and `[DataLensIgnore]` are honored). Dictionary-like
+inputs (`IDictionary<string, object?>`, `ExpandoObject`) are also supported —
+keys become column names. Custom selectors and header aliases are available
+via `EnumerableSourceOptions<T>`.
+
 ### Programmatic Access
 
 ```csharp
@@ -341,7 +364,6 @@ foreach (var pair in analysis.Correlation!.HighCorrelationPairs)
 **Planned (not yet shipped):**
 - HTML reports with interactive charts (Plotly.js)
 - Encoding auto-detection in `CsvBridge` — depends on FilePrepper 0.7.0
-- `IEnumerable<T>` POCO input
 - Fluent facade API + `examples/` build verification
 
 ## Requirements
