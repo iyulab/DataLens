@@ -60,20 +60,10 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
             {
                 var matrix = adapter.ToCleanMatrix();
                 int nRows = matrix.GetLength(0);
-                int nCols = matrix.GetLength(1);
                 if (nRows >= options.ChangepointMinSegmentLength * 2)
                 {
-                    // double[,] → double[][] (signal channels: 컬럼별 1차원 배열의 배열)
-                    var signals = new double[nCols][];
-                    for (int j = 0; j < nCols; j++)
-                    {
-                        signals[j] = new double[nRows];
-                        for (int i = 0; i < nRows; i++)
-                            signals[j][i] = matrix[i, j];
-                    }
-
                     var multiResult = client.PeltMulti(
-                        signals,
+                        matrix,
                         cost: options.ChangepointCost,
                         penalty: options.ChangepointPenalty,
                         minSegmentLen: options.ChangepointMinSegmentLength);

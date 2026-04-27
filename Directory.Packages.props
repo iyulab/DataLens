@@ -7,8 +7,8 @@
 
   <ItemGroup>
     <!-- Core dependencies -->
-    <PackageVersion Include="FilePrepper" Version="0.6.0" />
-    <PackageVersion Include="UInsight" Version="0.7.0" />
+    <PackageVersion Include="FilePrepper" Version="0.6.2" />
+    <PackageVersion Include="UInsight" Version="0.8.0" />
 
     <!-- CLI dependencies -->
     <PackageVersion Include="System.CommandLine" Version="3.0.0-preview.2.26159.112" />
@@ -20,7 +20,7 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
 
-    <!-- Transitive pin: NU1903 mitigation (UInsight 0.7.0 → System.Security.Cryptography.Xml 10.0.0).
+    <!-- Transitive pin: NU1903 mitigation (UInsight → System.Security.Cryptography.Xml 10.0.0).
          Remove when UInsight upstream upgrades. -->
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
