@@ -4,12 +4,14 @@ namespace DataLens.Adapters;
 
 /// <summary>
 /// 파일 경로 → FilePrepper DataPipeline → DataFrame 로드 브릿지.
-/// CSV, Excel, JSON, XML 지원.
+/// CSV / TSV / JSON 입력을 받아 DataFrame 으로 변환한다.
 /// </summary>
 public static class CsvBridge
 {
-    public static async Task<DataFrame> LoadAsync(string filePath)
+    public static async Task<DataFrame> LoadAsync(string filePath, CsvLoadOptions? options = null)
     {
+        options ??= CsvLoadOptions.Default;
+
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"File not found: {filePath}", filePath);
 
@@ -23,8 +25,10 @@ public static class CsvBridge
 
         var df = pipeline.ToDataFrame();
 
-        // 기본 전처리: 중복 행 제거
-        return RemoveDuplicateRows(df);
+        if (options.RemoveDuplicateRows)
+            df = RemoveDuplicateRows(df);
+
+        return df;
     }
 
     private static DataFrame RemoveDuplicateRows(DataFrame df)
