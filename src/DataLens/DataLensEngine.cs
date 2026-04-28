@@ -185,11 +185,7 @@ public static class DataLensEngine
         }
         catch (InsightException ex)
         {
-            warnings.Add(new AnalysisWarning(
-                Analyzer: analyzerName,
-                Category: WarningCategory.UpstreamError,
-                Message: ex.Message,
-                UpstreamCategory: ex.Category));
+            warnings.Add(AnalysisWarning.FromInsightException(analyzerName, ex));
             return null;
         }
         catch (Exception ex)

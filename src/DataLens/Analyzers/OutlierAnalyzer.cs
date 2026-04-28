@@ -109,11 +109,7 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
         }
         catch (InsightException ex)
         {
-            warnings?.Add(new AnalysisWarning(
-                Analyzer: algorithmName,
-                Category: WarningCategory.UpstreamError,
-                Message: ex.Message,
-                UpstreamCategory: ex.Category));
+            warnings?.Add(AnalysisWarning.FromInsightException(algorithmName, ex));
             return null;
         }
         catch (Exception ex)

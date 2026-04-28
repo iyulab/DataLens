@@ -2,6 +2,7 @@ using DataLens.Adapters;
 using DataLens.Analyzers;
 using DataLens.Models;
 using FilePrepper.Pipeline;
+using UInsight;
 
 namespace DataLens.Tests;
 
@@ -136,10 +137,10 @@ public class FailLoudWarningTests
     }
 
     [Fact]
-    public async Task Engine_InsightException_MapsToUpstreamErrorWithUpstreamCategory()
+    public async Task Engine_MahalanobisDegenerateInput_MapsToSingularCovarianceWithUpstreamCategory()
     {
-        // SafeAnalyze 의 매핑 검증 — Mahalanobis 호출 자체는 throw 가능 (UInsight 0.8.x degenerate handling).
-        // 분산 0 컬럼 input 으로 UInsight 측 throw 유도. throw 가 발생하면 emit-and-continue 로 UpstreamError + UpstreamCategory 보존.
+        // 모든 행 모든 컬럼 동일 — UInsight 0.8.1 mahalanobis 의 zero-variance 사전 검사가 DegenerateData throw.
+        // SafeAnalyze 가 AnalysisWarning.FromInsightException 으로 SingularCovariance + UpstreamCategory 매핑.
         var data = new List<Dictionary<string, string>>();
         for (int i = 0; i < 20; i++)
         {
@@ -154,9 +155,24 @@ public class FailLoudWarningTests
         var df = DataPipeline.FromData(data).ToDataFrame();
         var result = await DataLensEngine.Analyze(df, OnlyOutlier());
 
-        // 사전 진단 SingularCovariance 는 항상 emit. UInsight throw 시 추가로 UpstreamError 누적.
-        Assert.Contains(result.Warnings, w => w.Category == WarningCategory.SingularCovariance);
+        // 사전 진단 (DataQualityScreener) SingularCovariance — UpstreamCategory 없음 (DataLens 측 진단).
+        var preDiag = result.Warnings.FirstOrDefault(w =>
+            w.Analyzer == "Mahalanobis" &&
+            w.Category == WarningCategory.SingularCovariance &&
+            w.UpstreamCategory is null);
+        Assert.NotNull(preDiag);
+
+        // UInsight 0.8.1 throw → SingularCovariance + UpstreamCategory.DegenerateData 보존.
+        var upstreamDiag = result.Warnings.FirstOrDefault(w =>
+            w.Analyzer == "Mahalanobis" &&
+            w.UpstreamCategory == InsightErrorCategory.DegenerateData);
+        Assert.NotNull(upstreamDiag);
+        Assert.Equal(WarningCategory.SingularCovariance, upstreamDiag.Category);
     }
+
+    // 매핑 로직 자체의 단위 테스트는 InsightException 직접 인스턴스 생성이 어려워 (native error code 의존)
+    // 통합 테스트 Engine_MahalanobisDegenerateInput_* 으로 대체한다 — UInsight 0.8.1 의 실제 throw 가
+    // SingularCovariance + UpstreamCategory.DegenerateData 로 매핑되는지 end-to-end 검증.
 
     private static AnalysisOptions OnlyOutlier() => new()
     {
