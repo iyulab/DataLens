@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class FeatureAnalyzer : IAnalyzer<FeatureReport>
 {
-    public Task<FeatureReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<FeatureReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         var numericCols = adapter.NumericColumns;
         if (numericCols.Count < 2)

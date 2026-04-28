@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class RegressionAnalyzer : IAnalyzer<RegressionReport>
 {
-    public Task<RegressionReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<RegressionReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         var targetCol = options.TargetColumn;
         var numericCols = adapter.NumericColumns;

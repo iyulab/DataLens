@@ -105,52 +105,52 @@ public static class DataLensEngine
 
         cancellationToken.ThrowIfCancellationRequested();
         var profile = options.IncludeProfiling
-            ? SafeAnalyze("Profiling", () => new ProfilingAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Profiling", () => new ProfilingAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var descriptive = options.IncludeDescriptive
-            ? SafeAnalyze("Descriptive", () => new DescriptiveAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Descriptive", () => new DescriptiveAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var correlation = options.IncludeCorrelation
-            ? SafeAnalyze("Correlation", () => new CorrelationAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Correlation", () => new CorrelationAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var regression = options.IncludeRegression
-            ? SafeAnalyze("Regression", () => new RegressionAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Regression", () => new RegressionAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var distribution = options.IncludeDistribution
-            ? SafeAnalyze("Distribution", () => new DistributionAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Distribution", () => new DistributionAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var clusters = options.IncludeClustering
-            ? SafeAnalyze("Clustering", () => new ClusterAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Clustering", () => new ClusterAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var outliers = options.IncludeOutliers
-            ? SafeAnalyze("Outliers", () => new OutlierAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Outliers", () => new OutlierAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var features = options.IncludeFeatures
-            ? SafeAnalyze("Features", () => new FeatureAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Features", () => new FeatureAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var pca = options.IncludePca
-            ? SafeAnalyze("Pca", () => new PcaAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Pca", () => new PcaAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         cancellationToken.ThrowIfCancellationRequested();
         var changepoints = options.IncludeChangepoints
-            ? SafeAnalyze("Changepoints", () => new ChangepointAnalyzer().AnalyzeAsync(adapter, options).GetAwaiter().GetResult(), warnings)
+            ? SafeAnalyze("Changepoints", () => new ChangepointAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
             : null;
 
         return new AnalysisResult
@@ -185,12 +185,19 @@ public static class DataLensEngine
         }
         catch (InsightException ex)
         {
-            warnings.Add(new AnalysisWarning(analyzerName, ex.Category, ex.Message));
+            warnings.Add(new AnalysisWarning(
+                Analyzer: analyzerName,
+                Category: WarningCategory.UpstreamError,
+                Message: ex.Message,
+                UpstreamCategory: ex.Category));
             return null;
         }
         catch (Exception ex)
         {
-            warnings.Add(new AnalysisWarning(analyzerName, InsightErrorCategory.Unknown, ex.Message));
+            warnings.Add(new AnalysisWarning(
+                Analyzer: analyzerName,
+                Category: WarningCategory.ComputationFailed,
+                Message: ex.Message));
             return null;
         }
     }

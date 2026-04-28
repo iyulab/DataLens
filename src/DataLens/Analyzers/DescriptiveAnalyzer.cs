@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class DescriptiveAnalyzer : IAnalyzer<DescriptiveReport>
 {
-    public Task<DescriptiveReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<DescriptiveReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         var columns = new List<ColumnDescriptive>();
         var pipeline = DataPipeline.FromData(adapter.DataFrame.Rows);

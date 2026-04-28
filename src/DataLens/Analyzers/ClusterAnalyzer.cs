@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 {
-    public Task<ClusterReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<ClusterReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         // 클러스터링은 스케일에 민감 → 결측값 대체 + Z-Score 정규화
         var matrix = adapter.ToScaledMatrix();

@@ -12,6 +12,7 @@ public class DataAdapter
     private readonly List<string> _effectiveColumns = [];
     private readonly List<string> _numericColumns = [];
     private readonly List<string> _categoricalColumns = [];
+    private DataQualityReport? _dataQuality;
 
     public IReadOnlyList<string> NumericColumns => _numericColumns;
     public IReadOnlyList<string> CategoricalColumns => _categoricalColumns;
@@ -25,6 +26,12 @@ public class DataAdapter
     public DataFrame DataFrame => _dataFrame;
     public int RowCount => _dataFrame.RowCount;
     public int ColumnCount => _effectiveColumns.Count;
+
+    /// <summary>
+    /// 데이터 품질 사전 진단 결과. 첫 접근 시 <see cref="DataQualityScreener.Run"/> 호출 후 캐시.
+    /// 분석기들이 SingularCovariance 사전 진단 / ConstantColumns emit 등에 공유 참조한다.
+    /// </summary>
+    public DataQualityReport DataQuality => _dataQuality ??= DataQualityScreener.Run(this);
 
     public DataAdapter(DataFrame dataFrame)
         : this(dataFrame, includeColumns: null, excludeColumns: null) { }

@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class PcaAnalyzer : IAnalyzer<PcaReport>
 {
-    public Task<PcaReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<PcaReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         // PCA는 스케일에 민감 → 결측값 대체 + Z-Score 정규화
         var matrix = adapter.ToScaledMatrix();

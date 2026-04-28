@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
 {
-    public Task<ProfileReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<ProfileReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         try
         {

@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class DistributionAnalyzer : IAnalyzer<DistributionReport>
 {
-    public Task<DistributionReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<DistributionReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         using var client = new InsightClient();
         var columns = new List<ColumnDistribution>();

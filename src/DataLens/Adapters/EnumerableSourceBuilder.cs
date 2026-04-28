@@ -241,9 +241,10 @@ internal static class EnumerableSourceBuilder
         if (unsupported && seenUnsupported.Add(columnLabel))
         {
             warnings.Add(new AnalysisWarning(
-                "EnumerableSource",
-                InsightErrorCategory.Unknown,
-                $"Column '{columnLabel}' has type '{raw!.GetType().Name}' outside the minimal type-mapping policy; values are passed through ToString()."));
+                Analyzer: "EnumerableSource",
+                Category: WarningCategory.TypeMappingFailed,
+                Message: $"Column '{columnLabel}' has type '{raw!.GetType().Name}' outside the minimal type-mapping policy; values are passed through ToString().",
+                AffectedColumns: new[] { columnLabel }));
         }
         return cell;
     }

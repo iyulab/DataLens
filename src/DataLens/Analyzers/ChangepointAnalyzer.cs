@@ -6,7 +6,10 @@ namespace DataLens.Analyzers;
 
 public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
 {
-    public Task<ChangepointReport> AnalyzeAsync(DataAdapter adapter, AnalysisOptions options)
+    public Task<ChangepointReport> AnalyzeAsync(
+        DataAdapter adapter,
+        AnalysisOptions options,
+        ICollection<AnalysisWarning>? warnings = null)
     {
         var numericColumns = adapter.NumericColumns;
         if (numericColumns.Count == 0)
