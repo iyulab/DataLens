@@ -22,6 +22,16 @@ public class AnalysisOptions
     public double CorrelationThreshold { get; set; } = 0.7;
 
     /// <summary>
+    /// 상관 분석 방법.
+    /// <list type="bullet">
+    /// <item><see cref="CorrelationMethod.Pearson"/>: 선형 관계 (정규/등분산 가정). 기본값.</item>
+    /// <item><see cref="CorrelationMethod.Spearman"/>: 단조 관계 (rank-based, robust to outliers/skew).</item>
+    /// <item><see cref="CorrelationMethod.Kendall"/>: 순서 일치도 (tau-b, ties 처리).</item>
+    /// </list>
+    /// </summary>
+    public CorrelationMethod CorrelationMethod { get; set; } = CorrelationMethod.Pearson;
+
+    /// <summary>
     /// 이상치 탐지 오염 비율 (IsolationForest 파라미터).
     /// </summary>
     public double OutlierContamination { get; set; } = 0.1;

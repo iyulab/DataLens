@@ -28,6 +28,12 @@ public enum WarningCategory
     /// <summary>다른 컬럼과 |r| ≈ 1 인 컬럼 페어 (정보 중복 / 다중공선성).</summary>
     DuplicateColumns,
 
+    /// <summary>여러 컬럼이 동일한 행에서 함께 결측 — 구조적 결측 패턴 (MAR/MNAR 가능성).</summary>
+    MissingnessPattern,
+
+    /// <summary>완전히 동일한 행이 다중 존재 — 데이터 수집/조인 실수 가능성.</summary>
+    DuplicateRows,
+
     /// <summary>모든 페어 / 모든 행에서 결과가 NaN 등 정의 불가.</summary>
     AllPairsUndefined,
 

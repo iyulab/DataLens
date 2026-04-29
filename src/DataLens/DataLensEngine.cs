@@ -112,6 +112,10 @@ public static class DataLensEngine
         var warnings = new List<AnalysisWarning>();
         if (sourceWarnings is { Count: > 0 }) warnings.AddRange(sourceWarnings);
 
+        // 데이터 품질 사전 진단 emit — IncludeXxx 플래그와 무관하게 항상 emit (D3 MissingnessPattern, D4 DuplicateRows).
+        // ConstantColumns 는 OutlierAnalyzer 가 Mahalanobis 사전 진단 컨텍스트로 emit (위치 보존).
+        EmitDataQualityWarnings(adapter, warnings);
+
         cancellationToken.ThrowIfCancellationRequested();
         var profile = options.IncludeProfiling
             ? SafeAnalyze("Profiling", () => new ProfilingAnalyzer().AnalyzeAsync(adapter, options, warnings).GetAwaiter().GetResult(), warnings)
@@ -176,6 +180,31 @@ public static class DataLensEngine
             Changepoints = changepoints,
             Warnings = warnings
         };
+    }
+
+    private static void EmitDataQualityWarnings(DataAdapter adapter, List<AnalysisWarning> warnings)
+    {
+        var quality = adapter.DataQuality;
+
+        if (quality.CoMissingGroups.Count > 0)
+        {
+            foreach (var group in quality.CoMissingGroups)
+            {
+                warnings.Add(new AnalysisWarning(
+                    Analyzer: "DataQuality",
+                    Category: WarningCategory.MissingnessPattern,
+                    Message: $"컬럼 {string.Join(", ", group)} 가 동일한 행에서 함께 결측됩니다 — 구조적 결측 패턴 (MAR/MNAR 가능성).",
+                    AffectedColumns: group.ToList()));
+            }
+        }
+
+        if (quality.DuplicateRowCount > 0)
+        {
+            warnings.Add(new AnalysisWarning(
+                Analyzer: "DataQuality",
+                Category: WarningCategory.DuplicateRows,
+                Message: $"{quality.DuplicateRowCount} 개 행이 다른 행과 모든 컬럼 값이 동일합니다 — 데이터 수집/조인 실수 가능성."));
+        }
     }
 
     private static T? SafeAnalyze<T>(

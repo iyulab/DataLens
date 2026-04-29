@@ -39,14 +39,25 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
                 AffectedColumns: numericCols.ToList()));
             return Task.FromResult(new CorrelationReport
             {
-                ColumnNames = numericCols.ToList()
+                ColumnNames = numericCols.ToList(),
+                Method = options.CorrelationMethod
             });
         }
 
-        // Pearson 상관 행렬 계산. UInsight 가 throw 한 InsightException 은 swallow 하지 않고
-        // SafeAnalyze 가 UpstreamError 로 변환한다.
-        var result = client.Correlation(matrix);
+        // 사용자 지정 method 로 상관 행렬 계산 (Pearson / Spearman / Kendall).
+        // InsightException 은 swallow 하지 않고 SafeAnalyze 가 UpstreamError 로 변환한다.
+        var method = options.CorrelationMethod switch
+        {
+            CorrelationMethod.Spearman => CorrelationMethodKind.Spearman,
+            CorrelationMethod.Kendall => CorrelationMethodKind.Kendall,
+            _ => CorrelationMethodKind.Pearson,
+        };
+        var result = client.Correlation(matrix, method);
         var corrMatrix = result.Matrix;
+
+        // Condition number 는 항상 Pearson 매트릭스 기준 (다중공선성 진단의 표준).
+        // method != Pearson 이면 별도 호출. emit-and-continue — 실패 시 null.
+        double? conditionNumber = TryComputeConditionNumber(client, matrix, options.CorrelationMethod, warnings);
 
         // 고상관 쌍 + collinearity (DuplicateColumns) 동시 추출.
         var highPairs = new List<CorrelationPair>();
@@ -154,8 +165,42 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
             ColumnNames = numericCols.ToList(),
             Matrix = corrMatrix,
             HighCorrelationPairs = highPairs,
-            CategoricalAssociations = categoricalAssociations
+            CategoricalAssociations = categoricalAssociations,
+            Method = options.CorrelationMethod,
+            ConditionNumber = conditionNumber
         });
+    }
+
+    /// <summary>
+    /// UInsight <c>FeatureImportanceResult.ConditionNumber</c> 를 통해 다중공선성 진단을 얻는다.
+    /// <para>
+    /// FeatureImportance 는 condition number 외에 importance scores 도 계산하지만, 본 호출은
+    /// condition number 만 사용한다. 호출 비용은 UInsight 단일 호출 (matrix 입력) — 별도 회귀
+    /// 반복 없음.
+    /// </para>
+    /// </summary>
+    private static double? TryComputeConditionNumber(
+        InsightClient client,
+        double[,] matrix,
+        CorrelationMethod method,
+        ICollection<AnalysisWarning>? warnings)
+    {
+        // FeatureImportance 는 컬럼 ≥ 2 가정. matrix 는 위에서 GetLength(0) ≥ 3 검증 완료.
+        if (matrix.GetLength(1) < 2) return null;
+
+        try
+        {
+            var fi = client.FeatureImportance(matrix);
+            var cond = fi.ConditionNumber;
+            if (double.IsNaN(cond) || double.IsInfinity(cond)) return null;
+            return cond;
+        }
+        catch (InsightException ex)
+        {
+            // 다중공선성 진단 실패는 치명적이지 않다 — warn 후 null.
+            warnings?.Add(AnalysisWarning.FromInsightException("Multicollinearity", ex));
+            return null;
+        }
     }
 
     private static int FindRoot(Dictionary<int, int> parent, int x)

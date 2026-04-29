@@ -5,6 +5,13 @@ public class OutlierReport
     public IsolationForestReport? IsolationForest { get; init; }
     public LofReport? Lof { get; init; }
     public MahalanobisReport? Mahalanobis { get; init; }
+
+    /// <summary>
+    /// 단변량 (per-column) outlier 검출 결과 — Tukey IQR / 3σ / Hampel 각 방법별 컬럼 사전.
+    /// 다변량 IF/LOF/Mahalanobis 와 직교 — 컬럼별 fence 기반 가시성 보강.
+    /// </summary>
+    public UnivariateOutlierReport? Univariate { get; init; }
+
     public int TotalRows { get; init; }
     public int OutlierCount { get; init; }
     public double OutlierPercentage { get; init; }

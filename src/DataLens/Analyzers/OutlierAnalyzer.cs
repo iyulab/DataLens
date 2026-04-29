@@ -84,15 +84,33 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
             if (votes >= 2) outlierCount++;
         }
 
+        // 단변량 (per-column) outlier — 다변량 결과와 직교한 시각으로 보강.
+        // 원본 (imputation 전) 컬럼 값을 사용하여 결측 행을 생략한 fence 계산.
+        var univariate = ComputeUnivariateOutliers(adapter);
+
         return Task.FromResult(new OutlierReport
         {
             IsolationForest = ifReport,
             Lof = lofReport,
             Mahalanobis = mahReport,
+            Univariate = univariate,
             TotalRows = nRows,
             OutlierCount = outlierCount,
             OutlierPercentage = nRows > 0 ? (double)outlierCount / nRows * 100 : 0
         });
+    }
+
+    private static UnivariateOutlierReport ComputeUnivariateOutliers(DataAdapter adapter)
+    {
+        var report = new UnivariateOutlierReport();
+        foreach (var col in adapter.NumericColumns)
+        {
+            var values = adapter.ToArray(col); // 결측은 NaN — detector 내부에서 finite-only 필터링
+            report.Tukey[col] = UnivariateOutlierDetector.Tukey(values);
+            report.ThreeSigma[col] = UnivariateOutlierDetector.ThreeSigma(values);
+            report.Hampel[col] = UnivariateOutlierDetector.Hampel(values);
+        }
+        return report;
     }
 
     /// <summary>
