@@ -12,5 +12,12 @@ public class CsvLoadOptions
     /// </summary>
     public bool RemoveDuplicateRows { get; set; } = false;
 
+    /// <summary>
+    /// CSV/TSV 파일 인코딩. 기본값 <c>"auto"</c> 는 BOM + heuristic 감지 (FilePrepper 0.7.0+).
+    /// 명시 인코딩 예: <c>"utf-8"</c>, <c>"utf-8-bom"</c>, <c>"cp949"</c>, <c>"euc-kr"</c>.
+    /// JSON 입력은 본 옵션의 영향을 받지 않는다 (RFC 8259 — UTF-8).
+    /// </summary>
+    public string Encoding { get; set; } = "auto";
+
     public static CsvLoadOptions Default => new();
 }

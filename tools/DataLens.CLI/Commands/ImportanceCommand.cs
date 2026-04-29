@@ -1,4 +1,5 @@
 using System.CommandLine;
+using DataLens.Adapters;
 using DataLens.CLI.Presenters;
 
 namespace DataLens.CLI.Commands;
@@ -9,6 +10,7 @@ internal static class ImportanceCommand
     {
         var fileArg = CommonOptions.FileArgument();
         var formatOption = CommonOptions.FormatOption();
+        var encodingOption = CommonOptions.EncodingOption();
 
         var targetOption = new Option<string>("--target", "-t")
         {
@@ -20,7 +22,8 @@ internal static class ImportanceCommand
         {
             fileArg,
             targetOption,
-            formatOption
+            formatOption,
+            encodingOption
         };
 
         command.SetAction(async (parseResult, cancellationToken) =>
@@ -28,8 +31,10 @@ internal static class ImportanceCommand
             var file = parseResult.GetValue(fileArg)!;
             var target = parseResult.GetValue(targetOption)!;
             var format = parseResult.GetValue(formatOption)!;
+            var encoding = parseResult.GetValue(encodingOption)!;
 
-            var report = await DataLensEngine.FeatureImportance(file.FullName, target);
+            var loadOptions = new CsvLoadOptions { Encoding = encoding };
+            var report = await DataLensEngine.FeatureImportance(file.FullName, target, loadOptions, cancellationToken);
 
             if (format == "json")
             {

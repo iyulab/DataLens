@@ -27,7 +27,16 @@ public static class DataLensEngine
         AnalysisOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var dataFrame = await CsvBridge.LoadAsync(filePath).ConfigureAwait(false);
+        return await Analyze(filePath, options, loadOptions: null, cancellationToken).ConfigureAwait(false);
+    }
+
+    public static async Task<AnalysisResult> Analyze(
+        string filePath,
+        AnalysisOptions? options,
+        CsvLoadOptions? loadOptions,
+        CancellationToken cancellationToken = default)
+    {
+        var dataFrame = await CsvBridge.LoadAsync(filePath, loadOptions).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await Analyze(dataFrame, options, cancellationToken).ConfigureAwait(false);
     }
@@ -198,9 +207,17 @@ public static class DataLensEngine
         }
     }
 
-    public static async Task<ProfileReport> Profile(string filePath, CancellationToken cancellationToken = default)
+    public static Task<ProfileReport> Profile(string filePath, CancellationToken cancellationToken = default)
     {
-        var dataFrame = await CsvBridge.LoadAsync(filePath).ConfigureAwait(false);
+        return Profile(filePath, loadOptions: null, cancellationToken);
+    }
+
+    public static async Task<ProfileReport> Profile(
+        string filePath,
+        CsvLoadOptions? loadOptions,
+        CancellationToken cancellationToken = default)
+    {
+        var dataFrame = await CsvBridge.LoadAsync(filePath, loadOptions).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await Task.Run(() =>
         {
@@ -209,12 +226,21 @@ public static class DataLensEngine
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    public static async Task<FeatureReport> FeatureImportance(
+    public static Task<FeatureReport> FeatureImportance(
         string filePath,
         string target,
         CancellationToken cancellationToken = default)
     {
-        var dataFrame = await CsvBridge.LoadAsync(filePath).ConfigureAwait(false);
+        return FeatureImportance(filePath, target, loadOptions: null, cancellationToken);
+    }
+
+    public static async Task<FeatureReport> FeatureImportance(
+        string filePath,
+        string target,
+        CsvLoadOptions? loadOptions,
+        CancellationToken cancellationToken = default)
+    {
+        var dataFrame = await CsvBridge.LoadAsync(filePath, loadOptions).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await Task.Run(() =>
         {

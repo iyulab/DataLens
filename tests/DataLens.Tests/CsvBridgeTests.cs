@@ -1,3 +1,4 @@
+using System.Text;
 using DataLens.Adapters;
 
 namespace DataLens.Tests;
@@ -5,6 +6,14 @@ namespace DataLens.Tests;
 public class CsvBridgeTests : IDisposable
 {
     private readonly string _tempDir;
+
+    static CsvBridgeTests()
+    {
+        // CP949 (codepage 949) is provided by CodePagesEncodingProvider on .NET (it is not in the
+        // default Encoding registry). FilePrepper 0.7.0 registers this internally for its CSV reader,
+        // but our test fixtures call Encoding.GetEncoding(...) directly to *write* CP949 bytes.
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
 
     public CsvBridgeTests()
     {
@@ -78,5 +87,35 @@ public class CsvBridgeTests : IDisposable
         var path = Path.Combine(_tempDir, "missing.csv");
 
         await Assert.ThrowsAsync<FileNotFoundException>(() => CsvBridge.LoadAsync(path));
+    }
+
+    [Fact]
+    public async Task LoadAsync_Cp949Encoding_RoundTripsKoreanText()
+    {
+        var cp949 = Encoding.GetEncoding(949);
+        var path = Path.Combine(_tempDir, "cp949.csv");
+        File.WriteAllBytes(path, cp949.GetBytes("이름,점수\n홍길동,95\n임꺽정,87\n"));
+
+        var df = await CsvBridge.LoadAsync(path, new CsvLoadOptions { Encoding = "cp949" });
+
+        Assert.Equal(2, df.RowCount);
+        Assert.Contains("이름", df.ColumnNames);
+        Assert.Contains("점수", df.ColumnNames);
+        Assert.Equal("홍길동", df.Rows[0]["이름"]);
+        Assert.Equal("임꺽정", df.Rows[1]["이름"]);
+    }
+
+    [Fact]
+    public async Task LoadAsync_AutoEncoding_DetectsCp949WithoutBom()
+    {
+        var cp949 = Encoding.GetEncoding(949);
+        var path = Path.Combine(_tempDir, "auto.csv");
+        File.WriteAllBytes(path, cp949.GetBytes("이름,점수\n홍길동,95\n"));
+
+        // Default options use Encoding="auto" — must succeed without an explicit codepage.
+        var df = await CsvBridge.LoadAsync(path);
+
+        Assert.Equal(1, df.RowCount);
+        Assert.Equal("홍길동", df.Rows[0]["이름"]);
     }
 }

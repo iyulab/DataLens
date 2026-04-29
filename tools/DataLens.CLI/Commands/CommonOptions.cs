@@ -13,6 +13,15 @@ internal static class CommonOptions
         };
     }
 
+    public static Option<string> EncodingOption()
+    {
+        return new Option<string>("--encoding", "-e")
+        {
+            Description = "CSV/TSV input encoding (e.g., auto, utf-8, utf-8-bom, cp949, euc-kr). Ignored for JSON inputs.",
+            DefaultValueFactory = _ => "auto"
+        };
+    }
+
     public static Argument<FileInfo> FileArgument()
     {
         var arg = new Argument<FileInfo>("file")

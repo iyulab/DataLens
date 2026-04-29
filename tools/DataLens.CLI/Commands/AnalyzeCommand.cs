@@ -1,4 +1,5 @@
 using System.CommandLine;
+using DataLens.Adapters;
 using DataLens.CLI.Presenters;
 
 namespace DataLens.CLI.Commands;
@@ -23,6 +24,7 @@ internal static class AnalyzeCommand
     {
         var fileArg = CommonOptions.FileArgument();
         var formatOption = CommonOptions.FormatOption();
+        var encodingOption = CommonOptions.EncodingOption();
 
         var targetOption = new Option<string?>("--target", "-t")
         {
@@ -38,6 +40,7 @@ internal static class AnalyzeCommand
         {
             fileArg,
             formatOption,
+            encodingOption,
             targetOption,
             includeOption
         };
@@ -46,11 +49,13 @@ internal static class AnalyzeCommand
         {
             var file = parseResult.GetValue(fileArg)!;
             var format = parseResult.GetValue(formatOption)!;
+            var encoding = parseResult.GetValue(encodingOption)!;
             var target = parseResult.GetValue(targetOption);
             var include = parseResult.GetValue(includeOption);
 
             var options = BuildOptions(target, include);
-            var result = await DataLensEngine.Analyze(file.FullName, options);
+            var loadOptions = new CsvLoadOptions { Encoding = encoding };
+            var result = await DataLensEngine.Analyze(file.FullName, options, loadOptions, cancellationToken);
 
             if (format == "json")
             {

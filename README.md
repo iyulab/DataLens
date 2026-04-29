@@ -370,8 +370,12 @@ foreach (var pair in analysis.Correlation!.HighCorrelationPairs)
   (Plotly.NET, ScottPlot, OxyPlot, or a future companion package such as
   `DataLens.Reports.Plotly`). The core stays JSON-first.
 
-**Planned (not yet shipped):**
-- Encoding auto-detection in `CsvBridge` — depends on FilePrepper 0.7.0
+**Available:**
+- Encoding auto-detection in `CsvBridge` (FilePrepper 0.7.0+) —
+  `new CsvLoadOptions { Encoding = "auto" }` (default) detects BOM and falls
+  back to a CP949/EUC-KR/UTF-8 heuristic. Override with explicit codepage
+  names (e.g., `"cp949"`, `"euc-kr"`, `"utf-8"`, `"utf-8-bom"`).
+  CLI: pass `--encoding cp949` to any command. JSON inputs are UTF-8 per RFC 8259.
 
 Every code block in this README is exercised by `samples/DataLens.Sample`, so
 build failures there fail the build. If a snippet here drifts from the actual

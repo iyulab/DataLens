@@ -1,4 +1,5 @@
 using System.CommandLine;
+using DataLens.Adapters;
 using DataLens.CLI.Presenters;
 
 namespace DataLens.CLI.Commands;
@@ -9,17 +10,20 @@ internal static class CorrelateCommand
     {
         var fileArg = CommonOptions.FileArgument();
         var formatOption = CommonOptions.FormatOption();
+        var encodingOption = CommonOptions.EncodingOption();
 
         var command = new Command("correlate", "Run correlation analysis")
         {
             fileArg,
-            formatOption
+            formatOption,
+            encodingOption
         };
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var file = parseResult.GetValue(fileArg)!;
             var format = parseResult.GetValue(formatOption)!;
+            var encoding = parseResult.GetValue(encodingOption)!;
 
             var options = new AnalysisOptions
             {
@@ -34,7 +38,8 @@ internal static class CorrelateCommand
                 IncludePca = false
             };
 
-            var result = await DataLensEngine.Analyze(file.FullName, options);
+            var loadOptions = new CsvLoadOptions { Encoding = encoding };
+            var result = await DataLensEngine.Analyze(file.FullName, options, loadOptions, cancellationToken);
 
             if (format == "json")
             {

@@ -19,9 +19,9 @@ public static class CsvBridge
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
         var pipeline = ext switch
         {
-            ".csv" or ".tsv" => await DataPipeline.FromCsvAsync(filePath),
+            ".csv" or ".tsv" => await DataPipeline.FromCsvAsync(filePath, encoding: options.Encoding),
             ".json" => DataPipeline.FromData(await LoadJsonAsync(filePath)),
-            _ => await DataPipeline.FromCsvAsync(filePath) // CSV fallback for unknown extensions
+            _ => await DataPipeline.FromCsvAsync(filePath, encoding: options.Encoding) // CSV fallback for unknown extensions
         };
 
         var df = pipeline.ToDataFrame();
