@@ -11,53 +11,43 @@ public class PcaAnalyzer : IAnalyzer<PcaReport>
         AnalysisOptions options,
         ICollection<AnalysisWarning>? warnings = null)
     {
-        // PCA는 스케일에 민감 → 결측값 대체 + Z-Score 정규화
+        // PCA는 스케일에 민감 → 결측값 대체 + Z-Score 정규화.
+        // ToScaledMatrix 가 이미 표준화하므로 UInsight 측 autoScale=false 로 이중 표준화 회피.
         var matrix = adapter.ToScaledMatrix();
         int nRows = matrix.GetLength(0);
         int nCols = matrix.GetLength(1);
         if (nRows < 3 || nCols < 2)
             return Task.FromResult(new PcaReport());
 
-        try
+        using var client = new InsightClient();
+
+        // 자동 nComponents 선택: 전체 컬럼 수로 PCA 수행 후 threshold 기준 절단.
+        uint maxComponents = (uint)Math.Min(nRows, nCols);
+        var result = client.Pca(matrix, maxComponents, autoScale: false);
+
+        // threshold 기준으로 자동 nComponents 결정. CumulativeVariance 는 native 산출.
+        var cumulative = result.CumulativeVariance;
+        uint autoComponents = maxComponents;
+        for (int i = 0; i < cumulative.Length; i++)
         {
-            using var client = new InsightClient();
-
-            // 자동 nComponents 선택: 전체 컬럼 수로 PCA 수행 후 threshold 기준 절단
-            uint maxComponents = (uint)Math.Min(nRows, nCols);
-            var result = client.Pca(matrix, maxComponents);
-
-            // 누적 분산 비율 계산
-            var explained = result.ExplainedVariance;
-            var cumulative = new double[explained.Length];
-            double sum = 0;
-            for (int i = 0; i < explained.Length; i++)
+            if (cumulative[i] >= options.PcaVarianceThreshold)
             {
-                sum += explained[i];
-                cumulative[i] = sum;
+                autoComponents = (uint)(i + 1);
+                break;
             }
-
-            // threshold 기준으로 자동 nComponents 결정
-            uint autoComponents = maxComponents;
-            for (int i = 0; i < cumulative.Length; i++)
-            {
-                if (cumulative[i] >= options.PcaVarianceThreshold)
-                {
-                    autoComponents = (uint)(i + 1);
-                    break;
-                }
-            }
-
-            return Task.FromResult(new PcaReport
-            {
-                NComponents = autoComponents,
-                ExplainedVariance = explained,
-                CumulativeVariance = cumulative,
-                TotalExplainedVariance = sum
-            });
         }
-        catch
+        double total = cumulative.Length > 0 ? cumulative[(int)autoComponents - 1] : 0;
+
+        return Task.FromResult(new PcaReport
         {
-            return Task.FromResult(new PcaReport());
-        }
+            NComponents = autoComponents,
+            NFeatures = result.NFeatures,
+            NSamples = result.NSamples,
+            ExplainedVariance = result.ExplainedVariance,
+            CumulativeVariance = cumulative,
+            TotalExplainedVariance = total,
+            Loadings = result.Loadings,
+            Scores = result.Scores
+        });
     }
 }

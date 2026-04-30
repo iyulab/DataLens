@@ -30,6 +30,24 @@ public class KMeansReport
 
     /// <summary>true이면 MiniBatchKMeans로 계산됨, false이면 표준 KMeans.</summary>
     public bool UsedMiniBatch { get; init; }
+
+    /// <summary>
+    /// 평균 silhouette score (-1 ~ +1). 클러스터 분리 품질의 정량 지표:
+    /// <list type="bullet">
+    /// <item>≥ 0.5: 양호한 분리</item>
+    /// <item>0.25 ~ 0.5: 약한 구조</item>
+    /// <item>&lt; 0.25: 클러스터 구조 불명확</item>
+    /// </list>
+    /// WCSS 와 달리 K 비교에 사용 가능 (K 단조 감소 아님). singleton/단일 클러스터 점은 평균에서 제외.
+    /// <c>null</c> 이면 <see cref="AnalysisOptions.ComputeSilhouette"/> 가 false 이거나 호출 실패.
+    /// </summary>
+    public double? SilhouetteAvg { get; init; }
+
+    /// <summary>
+    /// 행별 silhouette score (length = 데이터 행 수). singleton/단일 클러스터 점은 0.0.
+    /// per-cluster 분포 시각화·작은 클러스터 강조용. <c>null</c> 이면 미산출.
+    /// </summary>
+    public double[]? SilhouettePerSample { get; init; }
 }
 
 public class DbscanReport

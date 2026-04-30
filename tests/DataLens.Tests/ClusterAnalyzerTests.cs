@@ -88,6 +88,68 @@ public class ClusterAnalyzerTests
     }
 
     [Fact]
+    public async Task KMeans_PopulatesSilhouetteWhenEnabled()
+    {
+        var data = MakeThreeClusters(rows: 30);
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var options = new AnalysisOptions
+        {
+            MaxClusters = 8,
+            ComputeSilhouette = true
+        };
+
+        var report = await new ClusterAnalyzer().AnalyzeAsync(adapter, options);
+
+        Assert.NotNull(report.KMeans);
+        Assert.NotNull(report.KMeans.SilhouetteAvg);
+        Assert.InRange(report.KMeans.SilhouetteAvg!.Value, -1.0, 1.0);
+        // 잘 분리된 3 cluster — silhouette 가 양호 영역(>0.4)
+        Assert.True(report.KMeans.SilhouetteAvg.Value > 0.4,
+            $"Expected silhouette > 0.4 for well-separated clusters, got {report.KMeans.SilhouetteAvg.Value}");
+        Assert.NotNull(report.KMeans.SilhouettePerSample);
+        Assert.Equal(report.KMeans.Labels.Length, report.KMeans.SilhouettePerSample!.Length);
+    }
+
+    [Fact]
+    public async Task KMeans_SkipsSilhouetteWhenDisabled()
+    {
+        var data = MakeThreeClusters(rows: 30);
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var options = new AnalysisOptions
+        {
+            MaxClusters = 8,
+            ComputeSilhouette = false
+        };
+
+        var report = await new ClusterAnalyzer().AnalyzeAsync(adapter, options);
+
+        Assert.NotNull(report.KMeans);
+        Assert.Null(report.KMeans.SilhouetteAvg);
+        Assert.Null(report.KMeans.SilhouettePerSample);
+    }
+
+    [Fact]
+    public async Task KMeans_SkipsSilhouetteWhenAboveRowThreshold()
+    {
+        var data = MakeThreeClusters(rows: 30);
+        var df = DataPipeline.FromData(data).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var options = new AnalysisOptions
+        {
+            MaxClusters = 8,
+            ComputeSilhouette = true,
+            SilhouetteRowThreshold = 50  // 90 행이 임계 초과 → skip
+        };
+
+        var report = await new ClusterAnalyzer().AnalyzeAsync(adapter, options);
+
+        Assert.NotNull(report.KMeans);
+        Assert.Null(report.KMeans.SilhouetteAvg);
+    }
+
+    [Fact]
     public async Task MiniBatchKMeansThresholdZero_AlwaysUsesStandardKMeans()
     {
         var data = MakeThreeClusters(rows: 200);

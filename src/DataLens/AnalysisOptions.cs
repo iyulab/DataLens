@@ -64,6 +64,18 @@ public class AnalysisOptions
     public uint MiniBatchKMeansRowThreshold { get; set; } = 10000;
 
     /// <summary>
+    /// KMeans 결과에 silhouette score 를 산출할지 여부. 비용 O(n²) — 행 수가 큰 데이터셋에서는 부담.
+    /// false 면 <see cref="Models.KMeansReport.SilhouetteAvg"/>·<see cref="Models.KMeansReport.SilhouettePerSample"/> 가 null.
+    /// </summary>
+    public bool ComputeSilhouette { get; set; } = true;
+
+    /// <summary>
+    /// silhouette 산출을 자동 skip 하는 행 수 임계값. 행 수가 이 값을 초과하면 <see cref="ComputeSilhouette"/> 가 true 여도 skip.
+    /// 0 이면 임계 없음 (항상 산출). O(n²) 비용 보호용.
+    /// </summary>
+    public uint SilhouetteRowThreshold { get; set; } = 50_000;
+
+    /// <summary>
     /// HDBSCAN 최소 클러스터 크기.
     /// </summary>
     public uint HdbscanMinClusterSize { get; set; } = 5;

@@ -53,6 +53,26 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 .OrderBy(s => s.ClusterId)
                 .ToList();
 
+            // silhouette 산출 — O(n²) 이므로 옵션 + 행 수 임계로 보호.
+            double? silhouetteAvg = null;
+            double[]? silhouettePerSample = null;
+            if (options.ComputeSilhouette
+                && kmeans.K >= 2
+                && (options.SilhouetteRowThreshold == 0
+                    || (uint)matrix.GetLength(0) <= options.SilhouetteRowThreshold))
+            {
+                try
+                {
+                    var sil = client.Silhouette(matrix, kmeans.Labels, kmeans.K);
+                    silhouetteAvg = sil.Avg;
+                    silhouettePerSample = sil.PerSample;
+                }
+                catch (InsightException ex)
+                {
+                    warnings?.Add(AnalysisWarning.FromInsightException("Silhouette", ex));
+                }
+            }
+
             kmeansReport = new KMeansReport
             {
                 K = kmeans.K,
@@ -60,7 +80,9 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 Iterations = kmeans.Iterations,
                 Labels = kmeans.Labels,
                 ClusterSizes = clusterSizes,
-                UsedMiniBatch = useMiniBatch
+                UsedMiniBatch = useMiniBatch,
+                SilhouetteAvg = silhouetteAvg,
+                SilhouettePerSample = silhouettePerSample
             };
         }
         catch { }
