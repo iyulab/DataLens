@@ -25,6 +25,12 @@ public enum WarningCategory
     /// <summary>분산 0 또는 거의 0 인 컬럼 (값이 모두 동일).</summary>
     ConstantColumns,
 
+    /// <summary>분산 0 / 단조-결측 컬럼을 분석 전 자동 제외하고 나머지 컬럼으로 부분 결과를 산출했음. <see cref="AnalysisWarning.AffectedColumns"/> 에 제외된 컬럼 목록.</summary>
+    DegenerateColumnsExcluded,
+
+    /// <summary>분산 0 / 결측 컬럼을 제외한 후 분석 가능한 컬럼이 임계 미만이라 부분 결과조차 산출 불가.</summary>
+    InsufficientUsableColumns,
+
     /// <summary>다른 컬럼과 |r| ≈ 1 인 컬럼 페어 (정보 중복 / 다중공선성).</summary>
     DuplicateColumns,
 

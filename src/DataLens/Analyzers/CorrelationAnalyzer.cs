@@ -13,22 +13,56 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
         AnalysisOptions options,
         ICollection<AnalysisWarning>? warnings = null)
     {
-        var numericCols = adapter.NumericColumns;
-        if (numericCols.Count < 2)
+        var allNumericCols = adapter.NumericColumns;
+        if (allNumericCols.Count < 2)
         {
             warnings?.Add(new AnalysisWarning(
                 Analyzer: "Correlation",
                 Category: WarningCategory.InsufficientColumns,
-                Message: $"상관 분석 가능한 numeric 컬럼이 {numericCols.Count} 개 (최소 2 개 필요).",
-                AffectedColumns: numericCols.Count > 0 ? numericCols.ToList() : null));
+                Message: $"상관 분석 가능한 numeric 컬럼이 {allNumericCols.Count} 개 (최소 2 개 필요).",
+                AffectedColumns: allNumericCols.Count > 0 ? allNumericCols.ToList() : null));
             return Task.FromResult(new CorrelationReport
             {
-                ColumnNames = numericCols.ToList()
+                ColumnNames = allNumericCols.ToList()
             });
         }
 
+        // 분산 0 / 준상수 컬럼은 사전 제외 — UInsight 가 throw 하기 전에 부분 결과를 산출할 수 있도록.
+        // DataQuality 진단은 lazy 캐시되므로 여기서 호출해도 추가 비용 없음.
+        var degenerateSet = adapter.DataQuality.ConstantColumns.Count > 0
+            ? new HashSet<string>(adapter.DataQuality.ConstantColumns, StringComparer.Ordinal)
+            : null;
+        var numericCols = degenerateSet is null
+            ? allNumericCols.ToList()
+            : allNumericCols.Where(c => !degenerateSet.Contains(c)).ToList();
+
+        if (numericCols.Count < 2)
+        {
+            warnings?.Add(new AnalysisWarning(
+                Analyzer: "Correlation",
+                Category: WarningCategory.InsufficientUsableColumns,
+                Message: $"분산 0 컬럼 {allNumericCols.Count - numericCols.Count} 개 제외 후 분석 가능 컬럼이 {numericCols.Count} (최소 2 필요).",
+                AffectedColumns: allNumericCols.ToList()));
+            return Task.FromResult(new CorrelationReport
+            {
+                ColumnNames = numericCols,
+                Method = options.CorrelationMethod
+            });
+        }
+
+        // 일부 제외했으나 분석 가능 — degenerate 컬럼 목록을 사용자에게 명시.
+        if (degenerateSet is not null && numericCols.Count < allNumericCols.Count)
+        {
+            var excluded = allNumericCols.Where(degenerateSet.Contains).ToList();
+            warnings?.Add(new AnalysisWarning(
+                Analyzer: "Correlation",
+                Category: WarningCategory.DegenerateColumnsExcluded,
+                Message: $"분산 0 컬럼 {excluded.Count} 개를 자동 제외하고 나머지 {numericCols.Count} 개로 상관 분석을 계산했습니다.",
+                AffectedColumns: excluded));
+        }
+
         using var client = new InsightClient();
-        var matrix = adapter.ToCleanMatrix();
+        var matrix = adapter.ToCleanMatrix(numericCols.ToArray());
 
         if (matrix.GetLength(0) < 3)
         {
@@ -36,10 +70,10 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
                 Analyzer: "Correlation",
                 Category: WarningCategory.InsufficientRows,
                 Message: $"NaN 제거 후 행 수가 {matrix.GetLength(0)} (최소 3 필요).",
-                AffectedColumns: numericCols.ToList()));
+                AffectedColumns: numericCols));
             return Task.FromResult(new CorrelationReport
             {
-                ColumnNames = numericCols.ToList(),
+                ColumnNames = numericCols,
                 Method = options.CorrelationMethod
             });
         }
@@ -162,7 +196,7 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
 
         return Task.FromResult(new CorrelationReport
         {
-            ColumnNames = numericCols.ToList(),
+            ColumnNames = numericCols,
             Matrix = corrMatrix,
             HighCorrelationPairs = highPairs,
             CategoricalAssociations = categoricalAssociations,

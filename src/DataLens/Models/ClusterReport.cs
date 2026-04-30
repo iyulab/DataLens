@@ -6,7 +6,17 @@ public class ClusterReport
     public DbscanReport? Dbscan { get; init; }
     public HierarchicalReport? Hierarchical { get; init; }
     public HdbscanReport? Hdbscan { get; init; }
+
+    /// <summary>
+    /// Gap statistic 으로 추정한 최적 K. <c>null</c> 이면 GapStatistic 호출 실패 (기본 K=3 으로 fallback).
+    /// </summary>
     public uint? OptimalK { get; init; }
+
+    /// <summary>
+    /// Gap statistic 값 (Tibshirani 2001) — K=2..<see cref="AnalysisOptions.MaxClusters"/> 에 대응.
+    /// 인덱스 매핑: <c>GapValues[k - 2]</c> = K=k 의 gap. 길이 = <c>MaxClusters - 1</c>.
+    /// 값이 클수록 해당 K 에서 클러스터 분리가 균일 분포 대비 양호함을 의미. <c>null</c> 이면 미산출.
+    /// </summary>
     public double[]? GapValues { get; init; }
 }
 
