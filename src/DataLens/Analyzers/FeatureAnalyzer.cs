@@ -110,24 +110,33 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
             {
                 try
                 {
-                    var targetArray = adapter.ToCleanArray(targetCol);
-                    var permResult = client.PermutationImportance(matrix, targetArray);
-                    var permFeatures = new List<PermutationFeatureResult>();
-                    foreach (var f in permResult.Features)
+                    // 타겟을 피처 행렬에서 제외한다. 제외하지 않으면 모델이 타겟으로 타겟을
+                    // 예측(self-prediction)해 완벽 적합 → 실피처를 섞어도 점수 변화가 없어
+                    // 모든 실피처의 permutation importance가 0이 된다(F-06). 피처-전용 행렬은
+                    // 전 행을 유지하므로(중앙값 대체) targetArray 행 정합은 기존과 동일하다.
+                    var featureCols = numericCols.Where(c => c != targetCol).ToList();
+                    if (featureCols.Count >= 1)
                     {
-                        permFeatures.Add(new PermutationFeatureResult
+                        var featureMatrix = adapter.ToImputedMatrix(featureCols.ToArray());
+                        var targetArray = adapter.ToCleanArray(targetCol);
+                        var permResult = client.PermutationImportance(featureMatrix, targetArray);
+                        var permFeatures = new List<PermutationFeatureResult>();
+                        foreach (var f in permResult.Features)
                         {
-                            Name = (int)f.Index < numericCols.Count ? numericCols[(int)f.Index] : $"col_{f.Index}",
-                            Index = (int)f.Index,
-                            Importance = f.Importance,
-                            StdDev = f.StdDev
-                        });
+                            permFeatures.Add(new PermutationFeatureResult
+                            {
+                                Name = (int)f.Index < featureCols.Count ? featureCols[(int)f.Index] : $"col_{f.Index}",
+                                Index = (int)f.Index,
+                                Importance = f.Importance,
+                                StdDev = f.StdDev
+                            });
+                        }
+                        permutation = new PermutationSummary
+                        {
+                            BaselineScore = permResult.BaselineScore,
+                            Features = permFeatures
+                        };
                     }
-                    permutation = new PermutationSummary
-                    {
-                        BaselineScore = permResult.BaselineScore,
-                        Features = permFeatures
-                    };
                 }
                 catch { }
             }
