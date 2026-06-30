@@ -53,17 +53,19 @@ public class DescriptiveAnalyzer : IAnalyzer<DescriptiveReport>
     private static double ComputeSkewness(double[] values, double mean, double std)
     {
         if (std == 0) return 0;
-        int n = values.Length;
+        // n 은 double — 분모 (n-1)(n-2) 가 int 곱으로 평가되면 n≳46,341 에서 오버플로우한다.
+        double n = values.Length;
         double sum = values.Sum(v => Math.Pow((v - mean) / std, 3));
-        return (double)n / ((n - 1) * (n - 2)) * sum;
+        return n / ((n - 1) * (n - 2)) * sum;
     }
 
     private static double ComputeKurtosis(double[] values, double mean, double std)
     {
         if (std == 0) return 0;
-        int n = values.Length;
+        // n 은 double — 분모 (n-1)(n-2)(n-3) 가 int 곱이면 n≳1,291 부터 오버플로우(관측: n≈50K → Kurtosis ≈ -356,422).
+        double n = values.Length;
         double sum = values.Sum(v => Math.Pow((v - mean) / std, 4));
-        double excess = ((double)n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3)) * sum
+        double excess = (n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3)) * sum
                        - 3.0 * (n - 1) * (n - 1) / ((n - 2) * (n - 3));
         return excess;
     }
