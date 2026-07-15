@@ -6,12 +6,12 @@
 
   <ItemGroup>
     <!-- Core dependencies -->
-    <PackageVersion Include="FilePrepper" Version="0.7.0" />
+    <PackageVersion Include="FilePrepper" Version="0.7.2" />
     <PackageVersion Include="UInsight" Version="0.10.0" />
 
     <!-- CLI dependencies -->
     <PackageVersion Include="System.CommandLine" Version="3.0.0-preview.2.26159.112" />
-    <PackageVersion Include="Spectre.Console" Version="0.54.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.57.2" />
 
     <!-- Test dependencies -->
     <PackageVersion Include="coverlet.collector" Version="8.0.1" />
