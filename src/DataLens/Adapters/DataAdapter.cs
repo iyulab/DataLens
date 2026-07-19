@@ -195,7 +195,7 @@ public class DataAdapter
     /// DataFrame을 CSV 문자열로 변환 (UInsight ProfileCsv용).
     /// Include/Exclude 가 적용된 effective 컬럼만 export 한다.
     /// </summary>
-    public string ToCsvString()
+    public virtual string ToCsvString()
     {
         if (_effectiveColumns.Count == _dataFrame.ColumnCount)
             return _dataFrame.ToCsv();

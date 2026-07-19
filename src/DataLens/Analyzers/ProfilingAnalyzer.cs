@@ -49,8 +49,14 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
                 Columns = columns
             });
         }
-        catch
+        catch (InsightException ex)
         {
+            // Upstream (UInsight) profiling failure is non-fatal: record it as a warning and return
+            // an empty column set so the pipeline continues — but never swallow it silently (a caller
+            // must be able to tell "profiling failed" from "profiled zero columns"). A non-Insight
+            // exception (a bug in this layer) is intentionally NOT caught: it propagates rather than
+            // masquerading as an empty-but-successful profile — the F-class silent-failure this fixes.
+            warnings?.Add(AnalysisWarning.FromInsightException("Profiling", ex));
             return Task.FromResult(new ProfileReport
             {
                 RowCount = adapter.RowCount,
