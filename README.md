@@ -11,7 +11,7 @@ A .NET library for exploratory data analysis and statistical profiling.
 
 DataLens answers the question: **"What's in my data?"** — before you clean it, before you model it.
 
-Given a CSV/JSON dataset, DataLens produces comprehensive statistical analysis that helps you understand distributions, relationships, patterns, and anomalies. It combines [FilePrepper](https://github.com/iyulab/FilePrepper) for data ingestion with [UInsight](https://github.com/iyulab/u-insight) (Rust FFI) for high-performance computation.
+Given a CSV/JSON/Excel dataset, DataLens produces comprehensive statistical analysis that helps you understand distributions, relationships, patterns, and anomalies. It combines [FilePrepper](https://github.com/iyulab/FilePrepper) for data ingestion with [UInsight](https://github.com/iyulab/u-insight) (Rust FFI) for high-performance computation.
 
 ## Where DataLens Fits
 
@@ -27,7 +27,7 @@ CSV / JSON
 
 | Tool | Purpose | Input | Output |
 |------|---------|-------|--------|
-| **DataLens** | Understand your data | CSV / JSON | Analysis result objects, JSON |
+| **DataLens** | Understand your data | CSV / JSON / Excel | Analysis result objects, JSON |
 | **FilePrepper** | Clean & transform data | CSV | Cleaned CSV |
 | **MLoop** | Train & deploy ML models | CSV | ML model, predictions |
 
@@ -313,7 +313,7 @@ var corrJson = analysis.ToJson(Section.Correlation);
 
 ### FilePrepper → DataLens
 
-DataLens uses FilePrepper internally for CSV/JSON ingestion via `CsvBridge`.
+DataLens uses FilePrepper internally for CSV/JSON/Excel ingestion via `CsvBridge`.
 For pre-cleaning, run a FilePrepper pipeline and feed the resulting CSV to
 DataLens (or pass a `DataFrame` directly):
 

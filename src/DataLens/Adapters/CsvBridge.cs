@@ -5,7 +5,7 @@ namespace DataLens.Adapters;
 
 /// <summary>
 /// 파일 경로 → FilePrepper DataPipeline → DataFrame 로드 브릿지.
-/// CSV / TSV / JSON 입력을 받아 DataFrame 으로 변환한다.
+/// CSV / TSV / JSON / Excel(xlsx/xls) 입력을 받아 DataFrame 으로 변환한다.
 /// </summary>
 public static class CsvBridge
 {
@@ -21,7 +21,9 @@ public static class CsvBridge
         {
             ".csv" or ".tsv" => await DataPipeline.FromCsvAsync(filePath, encoding: options.Encoding),
             ".json" => DataPipeline.FromData(await LoadJsonAsync(filePath)),
-            _ => await DataPipeline.FromCsvAsync(filePath, encoding: options.Encoding) // CSV fallback for unknown extensions
+            ".xlsx" or ".xls" => await DataPipeline.FromExcelAsync(filePath),
+            _ => throw new NotSupportedException(
+                $"Unsupported file extension '{ext}' for '{filePath}'. Supported: .csv, .tsv, .json, .xlsx, .xls")
         };
 
         var df = pipeline.ToDataFrame();

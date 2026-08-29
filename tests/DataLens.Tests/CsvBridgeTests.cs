@@ -1,5 +1,6 @@
 using System.Text;
 using DataLens.Adapters;
+using FilePrepper.Pipeline;
 
 namespace DataLens.Tests;
 
@@ -117,5 +118,35 @@ public class CsvBridgeTests : IDisposable
 
         Assert.Equal(1, df.RowCount);
         Assert.Equal("홍길동", df.Rows[0]["이름"]);
+    }
+
+    [Fact]
+    public async Task LoadAsync_XlsxExtension_RoutesToExcelReaderNotCsvFallback()
+    {
+        var path = Path.Combine(_tempDir, "sales.xlsx");
+        var rows = new List<Dictionary<string, string>>
+        {
+            new() { ["region"] = "Seoul", ["amount"] = "100" },
+            new() { ["region"] = "Busan", ["amount"] = "200" },
+        };
+        await DataPipeline.FromData(rows).ToExcelAsync(path);
+
+        var df = await CsvBridge.LoadAsync(path);
+
+        Assert.Equal(2, df.RowCount);
+        Assert.Contains("region", df.ColumnNames);
+        Assert.Equal("Seoul", df.Rows[0]["region"]);
+        Assert.Equal("Busan", df.Rows[1]["region"]);
+    }
+
+    [Fact]
+    public async Task LoadAsync_UnknownExtension_ThrowsInsteadOfSilentCsvFallback()
+    {
+        // Pre-fix behavior silently parsed this as CSV; a binary/unrecognized format
+        // must fail loudly instead of returning a garbage DataFrame.
+        var path = Path.Combine(_tempDir, "data.parquet");
+        File.WriteAllText(path, "not actually csv content");
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => CsvBridge.LoadAsync(path));
     }
 }
