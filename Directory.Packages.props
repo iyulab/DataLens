@@ -6,10 +6,10 @@
 
   <ItemGroup>
     <!-- Core dependencies -->
-    <PackageVersion Include="FilePrepper" Version="0.7.2" />
+    <PackageVersion Include="FilePrepper" Version="0.7.4" />
     <!-- Security override for FilePrepper→EPPlus's transitive dependency — see DataLens.csproj -->
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
-    <PackageVersion Include="UInsight" Version="0.10.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.11" />
+    <PackageVersion Include="UInsight" Version="0.13.0" />
 
     <!-- CLI dependencies -->
     <PackageVersion Include="System.CommandLine" Version="3.0.0-preview.2.26159.112" />
