@@ -7,6 +7,9 @@ on:
       - 'Directory.Build.props'
   workflow_dispatch:
 
+env:
+  PACKAGE_NAME: DataLens
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -26,6 +29,27 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
+      # This workflow is triggered by any change to Directory.Build.props, not
+      # only by a version bump — that file also carries build and audit
+      # settings. Without this check a settings-only edit re-runs the publish
+      # against a version that is already released: the push itself is a no-op
+      # thanks to --skip-duplicate, but tagging then fails on the existing tag
+      # and reports the whole release as broken. Ask the registry what is
+      # actually published rather than inferring it from which file changed.
+      - name: Check if this version is already published
+        id: gate
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PKG_LOWER=$(echo "${{ env.PACKAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          HTTP=$(curl -s -o /dev/null -w '%{http_code}' "https://api.nuget.org/v3-flatcontainer/${PKG_LOWER}/${VERSION}/${PKG_LOWER}.nuspec")
+          if [ "$HTTP" = "200" ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "${{ env.PACKAGE_NAME }} ${VERSION} already on nuget.org — skipping publish"
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "${{ env.PACKAGE_NAME }} ${VERSION} not on nuget.org (HTTP ${HTTP}) — will publish"
+          fi
+
       - name: Restore
         run: dotnet restore
 
@@ -36,9 +60,11 @@ jobs:
         run: dotnet test -c Release --no-build --verbosity minimal
 
       - name: Pack
+        if: steps.gate.outputs.should_publish == 'true'
         run: dotnet pack -c Release --no-build -o ./nupkg
 
       - name: Push to NuGet
+        if: steps.gate.outputs.should_publish == 'true'
         run: |
           for pkg in ./nupkg/*.nupkg; do
             dotnet nuget push "$pkg" \
@@ -48,6 +74,7 @@ jobs:
           done
 
       - name: Create Git tag
+        if: steps.gate.outputs.should_publish == 'true'
         run: |
           git tag "v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
