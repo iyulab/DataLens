@@ -14,18 +14,40 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
-        run: dotnet restore
+      # Audit gate: NuGet's security audit already runs on every restore, but its
+      # findings are warnings by default. AuditPipeline=true promotes NU1900-NU1905
+      # to errors so a newly published advisory fails CI instead of scrolling past.
+      - name: Restore (NuGet security audit gate)
+        run: dotnet restore -p:AuditPipeline=true
 
       - name: Build
         run: dotnet build -c Release --no-restore
 
       - name: Test
         run: dotnet test -c Release --no-build --verbosity normal
+
+  changelog:
+    name: Changelog entry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # A release whose version has no changelog heading ships as "[Unreleased]"
+      # to everyone who reads the package page. The registry-existence check in
+      # publish.yml only prevents re-publishing the same version; it says nothing
+      # about whether the new one was written down.
+      - name: Version has a changelog entry
+        run: |
+          version=$(grep -oPm1 '(?<=<Version>)[^<]+' Directory.Build.props)
+          echo "Directory.Build.props declares $version"
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::CHANGELOG.md has no '## [$version]' heading."
+            exit 1
+          fi
+          echo "CHANGELOG.md has an entry for $version."
