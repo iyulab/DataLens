@@ -8,17 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
-## [0.14.2]
+## [0.14.2] - 2026-09-10
 
 ### Changed
 
 - Track `UInsight` 0.15.0, which follows `u-analytics` 0.8. Nothing in this
   library's own surface changes; the pin moves so the dependency does not sit on
   an older snapshot while looking current.
-
-
-### Changed
-
 - Re-synchronised the `UInsight` dependency with its latest published release.
 
 ### Added
@@ -27,6 +23,6 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 - NuGet security audit gate in CI: package advisories are warnings locally and
   errors in the audit pipeline.
 
-## [0.14.1]
+## [0.14.1] - 2026-08-29
 
 - Baseline for this changelog.
