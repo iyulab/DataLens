@@ -8,6 +8,12 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- UInsight 0.16.0. None of the charts DataLens calls changed; the new version
+  takes subgroup sizes up to 25 and rejects a chart row it cannot use instead of
+  skipping it.
+
 ## [0.14.2] - 2026-09-10
 
 ### Changed
