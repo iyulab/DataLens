@@ -10,6 +10,9 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- UInsight 0.17.0. Nothing DataLens calls changed: the version reports only
+  long-term capability indices when no within sigma is supplied and adds the
+  charts' `SigmaHat`, neither of which DataLens reaches.
 - UInsight 0.16.0. None of the charts DataLens calls changed; the new version
   takes subgroup sizes up to 25 and rejects a chart row it cannot use instead of
   skipping it.
