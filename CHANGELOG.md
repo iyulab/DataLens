@@ -10,6 +10,9 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- UInsight 0.18.0. Nothing DataLens calls changed: the version adds period
+  estimation and spectral residual anomaly scoring, which DataLens does not
+  reach.
 - UInsight 0.17.0. Nothing DataLens calls changed: the version reports only
   long-term capability indices when no within sigma is supplied and adds the
   charts' `SigmaHat`, neither of which DataLens reaches.
