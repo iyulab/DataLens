@@ -10,6 +10,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- UInsight 0.19.0. The Mahalanobis outlier threshold now comes from an exact normal
+  quantile (it was accurate to 4.5e-4), so flagged distances can differ in their
+  trailing digits; the Box-Cox capability call it adds options to is not one
+  DataLens reaches.
 - UInsight 0.18.0. Nothing DataLens calls changed: the version adds period
   estimation and spectral residual anomaly scoring, which DataLens does not
   reach.
