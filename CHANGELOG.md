@@ -10,7 +10,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
-- UInsight 0.20.0. **This one reaches results DataLens shows.** The Jarque-Bera
+- UInsight 0.20.1 (the code of 0.20.0, which never became installable on nuget.org).
+  **This one reaches results DataLens shows.** The Jarque-Bera
   statistic was computed from the bias-adjusted skewness and kurtosis, where the
   test it cites uses the plain moment ratios, and its p-value lost the tail
   beyond a statistic of about 74. `ColumnDistribution.JbStatistic` and
