@@ -5,10 +5,15 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>datalens</ToolCommandName>
     <PackageId>DataLens.CLI</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>CLI tool for exploratory data analysis using DataLens engine</Description>
     <PackageTags>eda;data-analysis;cli;csv;profiling</PackageTags>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="DataLens.CLI.Tests" />
