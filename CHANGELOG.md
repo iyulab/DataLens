@@ -10,6 +10,14 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- UInsight 0.20.0. **This one reaches results DataLens shows.** The Jarque-Bera
+  statistic was computed from the bias-adjusted skewness and kurtosis, where the
+  test it cites uses the plain moment ratios, and its p-value lost the tail
+  beyond a statistic of about 74. `ColumnDistribution.JbStatistic` and
+  `JbPValue` are passed straight through, so both change; and because a column
+  is called normal only when no test rejects, a Jarque-Bera p-value that moves
+  across the significance level flips `IsNormal`, and with it `Shape`. Expect
+  distribution sections to differ from 0.14.2 on data near the threshold.
 - UInsight 0.19.0. The Mahalanobis outlier threshold now comes from an exact normal
   quantile (it was accurate to 4.5e-4), so flagged distances can differ in their
   trailing digits; the Box-Cox capability call it adds options to is not one
