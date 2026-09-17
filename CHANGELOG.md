@@ -8,6 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- The publish workflow checks for this version's changelog heading before it
+  packs anything, instead of leaving that to CI, which runs beside it.
+
 ## [0.14.3] - 2026-09-17
 
 ### Fixed

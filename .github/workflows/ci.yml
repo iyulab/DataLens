@@ -38,16 +38,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # A release whose version has no changelog heading ships as "[Unreleased]"
-      # to everyone who reads the package page. The registry-existence check in
-      # publish.yml only prevents re-publishing the same version; it says nothing
-      # about whether the new one was written down.
       - name: Version has a changelog entry
-        run: |
-          version=$(grep -oPm1 '(?<=<Version>)[^<]+' Directory.Build.props)
-          echo "Directory.Build.props declares $version"
-          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
-            echo "::error file=CHANGELOG.md::CHANGELOG.md has no '## [$version]' heading."
-            exit 1
-          fi
-          echo "CHANGELOG.md has an entry for $version."
+        run: bash scripts/check-changelog-entry.sh
