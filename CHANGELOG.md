@@ -8,6 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.14.3] - 2026-09-17
+
+### Fixed
+
+- The `DataLens.CLI` package now carries the README, so its package page has a
+  description like the library package does.
+
 ### Changed
 
 - UInsight 0.20.1 (the code of 0.20.0, which never became installable on nuget.org).
