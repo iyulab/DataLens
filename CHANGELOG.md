@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-09-20
+
 ### Added
 
 - `TimeSeriesAnalyzer` — two primitives over an ordered series: `EstimatePeriod`
