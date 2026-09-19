@@ -1,4 +1,6 @@
 using DataLens;
+using DataLens.Analyzers;
+using DataLens.Models;
 
 namespace DataLens.Sample.Examples;
 
@@ -102,5 +104,19 @@ internal static class ModuleExamples
         };
         var analysis = await DataLensEngine.Analyze(filePath, options);
         _ = analysis;
+    }
+
+    internal static Task TimeSeriesAsync()
+    {
+        double[] series = [.. Enumerable.Range(0, 84).Select(i => (double)(i % 7))];
+        series[50] += 15;
+
+        SeriesPeriod period = TimeSeriesAnalyzer.EstimatePeriod(series);
+        Console.WriteLine($"period: {period.Period?.ToString() ?? "none"}");      // 7
+
+        SeriesAnomalyReport report = TimeSeriesAnalyzer.SpectralResidual(
+            series, new SpectralResidualOptions { Threshold = 3.0 });
+        Console.WriteLine($"anomalies: {string.Join(", ", report.Anomalies)}");  // 50
+        return Task.CompletedTask;
     }
 }

@@ -17,7 +17,7 @@ if (args[0].StartsWith("--example=", StringComparison.Ordinal))
 {
     var name = args[0]["--example=".Length..];
     var inputPath = args.Length > 1 ? args[1] : null;
-    if (inputPath is null && name is not "poco")
+    if (inputPath is null && name is not ("poco" or "timeseries"))
     {
         Console.Error.WriteLine($"--example={name} requires a CSV path as the second argument.");
         return;
@@ -38,6 +38,7 @@ if (args[0].StartsWith("--example=", StringComparison.Ordinal))
         "features"      => () => ModuleExamples.FeatureImportanceAsync(inputPath!),
         "pca"           => () => ModuleExamples.PcaAsync(inputPath!),
         "changepoint"   => () => ModuleExamples.ChangepointAsync(inputPath!),
+        "timeseries"    => () => ModuleExamples.TimeSeriesAsync(),
         "output"        => () => OutputExample.RunAsync(inputPath!),
         "fileprepper"   => () => IntegrationExamples.FilePrepperToDataLensAsync(inputPath!),
         "mloop"         => () => IntegrationExamples.DataLensToMLoopAsync(inputPath!),
@@ -135,5 +136,6 @@ static void PrintUsage()
     Console.WriteLine("  --example=profiling      --example=descriptive  --example=correlation");
     Console.WriteLine("  --example=regression     --example=cluster      --example=outliers");
     Console.WriteLine("  --example=features       --example=pca          --example=changepoint");
+    Console.WriteLine("  --example=timeseries");
     Console.WriteLine("  --example=fileprepper    --example=mloop");
 }

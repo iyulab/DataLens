@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Added
+
+- `TimeSeriesAnalyzer` — two primitives over an ordered series: `EstimatePeriod`
+  (the dominant period, or none) and `SpectralResidual` (a per-point anomaly score
+  with an expected value and band, and the flagged indices). Both run on UInsight's
+  own transform, so they work on every platform UInsight ships for, and neither
+  takes a trained model. The results are DataLens types (`SeriesPeriod`,
+  `SeriesAnomalyReport`); UInsight types do not appear in the signatures.
+
 ### Changed
 
 - The publish workflow checks for this version's changelog heading before it

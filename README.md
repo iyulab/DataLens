@@ -263,6 +263,36 @@ var options = new AnalysisOptions
 var analysis = await DataLensEngine.Analyze("timeseries.csv", options);
 ```
 
+### 10. Time-Series Period and Anomaly Scoring
+
+Two primitives over an ordered series, called directly rather than through
+`AnalysisOptions`: the order of the observations is the input, and a table has no
+notion of which column is time. Neither needs a trained model or a platform math
+library.
+
+```csharp
+using DataLens.Analyzers;
+using DataLens.Models;
+
+double[] series = [.. Enumerable.Range(0, 84).Select(i => (double)(i % 7))];
+series[50] += 15;
+
+SeriesPeriod period = TimeSeriesAnalyzer.EstimatePeriod(series);
+Console.WriteLine($"period: {period.Period?.ToString() ?? "none"}");      // 7
+
+SeriesAnomalyReport report = TimeSeriesAnalyzer.SpectralResidual(
+    series, new SpectralResidualOptions { Threshold = 3.0 });
+Console.WriteLine($"anomalies: {string.Join(", ", report.Anomalies)}");  // 50
+```
+
+- `EstimatePeriod` — AutoPeriod (a permutation-thresholded periodogram peak
+  confirmed on the autocorrelation function). `Period` is `null` when the series
+  has none; that is a finding, not an error. At least 8 observations.
+- `SpectralResidual` — spectral residual saliency (Ren et al. 2019): each point's
+  `Score`, an `Expected` value with a `Lower`/`Upper` band, and `IsAnomaly`.
+  It assumes no period, so a seasonal series does not need one supplied. Options
+  left unset take the paper's defaults. At least 12 observations.
+
 ## Output
 
 DataLens emits results as JSON. Chart / HTML rendering is delegated to renderer
