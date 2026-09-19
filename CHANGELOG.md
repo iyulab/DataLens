@@ -17,7 +17,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
   with an expected value and band, and the flagged indices). Both run on UInsight's
   own transform, so they work on every platform UInsight ships for, and neither
   takes a trained model. The results are DataLens types (`SeriesPeriod`,
-  `SeriesAnomalyReport`); UInsight types do not appear in the signatures.
+  `SeriesAnomalyReport`); UInsight types do not appear in the signatures. An option
+  out of range is refused with an `ArgumentException` naming that option.
 
 ### Changed
 

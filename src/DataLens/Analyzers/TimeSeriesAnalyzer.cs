@@ -91,6 +91,19 @@ public static class TimeSeriesAnalyzer
         if (options is null)
             return null;
 
+        // The engine rejects a bad option with one message listing every rule; naming the option
+        // that broke one is this layer's to do, since the options type is its own.
+        Require(options.AveragingWindow is null or >= 1, nameof(options.AveragingWindow), "must be at least 1");
+        Require(options.JudgementWindow is null or >= 1, nameof(options.JudgementWindow), "must be at least 1");
+        Require(options.Threshold is null || (options.Threshold > 0 && double.IsFinite(options.Threshold.Value)),
+            nameof(options.Threshold), "must be greater than 0");
+        Require(options.MinZscore is null || (options.MinZscore >= 0 && double.IsFinite(options.MinZscore.Value)),
+            nameof(options.MinZscore), "must be 0 or greater");
+        Require(options.Sensitivity is null or (> 0 and < 100), nameof(options.Sensitivity),
+            "must be between 0 and 100, exclusive");
+        Require(options.BatchSize is null or >= MinimumAnomalyPoints, nameof(options.BatchSize),
+            $"must be at least {MinimumAnomalyPoints}");
+
         var defaults = new UInsight.SpectralResidualOptions();
         return new UInsight.SpectralResidualOptions
         {
@@ -101,6 +114,12 @@ public static class TimeSeriesAnalyzer
             Sensitivity = options.Sensitivity ?? defaults.Sensitivity,
             BatchSize = options.BatchSize is { } n ? checked((uint)n) : defaults.BatchSize
         };
+    }
+
+    private static void Require(bool condition, string option, string rule)
+    {
+        if (!condition)
+            throw new ArgumentException($"{option} {rule}.", "options");
     }
 
     private static double[] Validate(IReadOnlyList<double> series, int minimum, string name)

@@ -135,4 +135,22 @@ public class TimeSeriesAnalyzerTests
         var ex = Assert.Throws<ArgumentException>(() => TimeSeriesAnalyzer.SpectralResidual(series));
         Assert.Contains("12", ex.Message);
     }
+
+    public static TheoryData<SpectralResidualOptions, string> InvalidOptions => new()
+    {
+        { new SpectralResidualOptions { Threshold = 0 }, "Threshold" },
+        { new SpectralResidualOptions { Sensitivity = 100 }, "Sensitivity" },
+        { new SpectralResidualOptions { Sensitivity = 0 }, "Sensitivity" },
+        { new SpectralResidualOptions { BatchSize = 5 }, "BatchSize" },
+        { new SpectralResidualOptions { AveragingWindow = 0 }, "AveragingWindow" },
+        { new SpectralResidualOptions { MinZscore = -1 }, "MinZscore" },
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidOptions))]
+    public void An_invalid_option_is_refused_by_name(SpectralResidualOptions options, string name)
+    {
+        var ex = Assert.Throws<ArgumentException>(() => TimeSeriesAnalyzer.SpectralResidual(Sawtooth(40, 7), options));
+        Assert.StartsWith(name + " ", ex.Message);
+    }
 }
