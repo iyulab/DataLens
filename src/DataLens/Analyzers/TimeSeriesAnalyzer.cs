@@ -91,8 +91,10 @@ public static class TimeSeriesAnalyzer
         if (options is null)
             return null;
 
-        // The engine rejects a bad option with one message listing every rule; naming the option
-        // that broke one is this layer's to do, since the options type is its own.
+        // The engine rejects a bad option with one message listing every rule, so this layer names
+        // the option that broke one. Temporary: it restates the engine's rules, and goes once the
+        // engine reports which rule failed.
+        // TODO(upstream: UInsight — report which option rule failed; remove this re-validation then)
         Require(options.AveragingWindow is null or >= 1, nameof(options.AveragingWindow), "must be at least 1");
         Require(options.JudgementWindow is null or >= 1, nameof(options.JudgementWindow), "must be at least 1");
         Require(options.Threshold is null || (options.Threshold > 0 && double.IsFinite(options.Threshold.Value)),
