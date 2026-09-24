@@ -8,6 +8,19 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- `TimeSeriesAnalyzer.SpectralResidual` no longer keeps its own copy of the
+  engine's option rules. An option out of range is still refused with an
+  `ArgumentException` whose message starts with the option's name, but the
+  rule in it is now the engine's, and the engine's `InsightException` is its
+  `InnerException`. This layer checks only that a count is not negative,
+  which the engine's unsigned type cannot hold.
+- UInsight 0.21.0 -> 0.22.0: the Mahalanobis threshold is the exact
+  chi-squared quantile (with one or two variables it was 1.9 % low, so
+  `OutlierAnalyzer` flags slightly fewer points there), and `BatchSize = 0`
+  is refused rather than running as a single batch.
+
 ## [0.15.0] - 2026-09-20
 
 ### Added

@@ -144,6 +144,10 @@ public class TimeSeriesAnalyzerTests
         { new SpectralResidualOptions { BatchSize = 5 }, "BatchSize" },
         { new SpectralResidualOptions { AveragingWindow = 0 }, "AveragingWindow" },
         { new SpectralResidualOptions { MinZscore = -1 }, "MinZscore" },
+        { new SpectralResidualOptions { JudgementWindow = 0 }, "JudgementWindow" },
+        { new SpectralResidualOptions { BatchSize = 0 }, "BatchSize" },
+        { new SpectralResidualOptions { AveragingWindow = -1 }, "AveragingWindow" },
+        { new SpectralResidualOptions { BatchSize = -12 }, "BatchSize" },
     };
 
     [Theory]
@@ -152,5 +156,20 @@ public class TimeSeriesAnalyzerTests
     {
         var ex = Assert.Throws<ArgumentException>(() => TimeSeriesAnalyzer.SpectralResidual(Sawtooth(40, 7), options));
         Assert.StartsWith(name + " ", ex.Message);
+        Assert.Equal("options", ex.ParamName);
+    }
+
+    /// <summary>
+    /// The rule in the message is the engine's, not a copy kept here: the out-of-range case carries
+    /// the engine's exception, and the text after the option's name is the engine's requirement.
+    /// </summary>
+    [Fact]
+    public void An_invalid_option_carries_the_engine_rule()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            TimeSeriesAnalyzer.SpectralResidual(Sawtooth(40, 7), new SpectralResidualOptions { Threshold = 0 }));
+        var engine = Assert.IsType<UInsight.InsightException>(ex.InnerException);
+        Assert.Equal("threshold", engine.Parameter);
+        Assert.Equal("Threshold must be a finite number > 0. (Parameter 'options')", ex.Message);
     }
 }

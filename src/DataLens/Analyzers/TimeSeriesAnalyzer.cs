@@ -55,15 +55,31 @@ public static class TimeSeriesAnalyzer
     /// (Ren et al. 2019) — spikes, steps and dropouts, without a trained model and without assuming
     /// a period.
     /// </summary>
-    /// <exception cref="ArgumentException">Fewer than <see cref="MinimumAnomalyPoints"/> values, or a
-    /// value that is not finite.</exception>
+    /// <exception cref="ArgumentException">Fewer than <see cref="MinimumAnomalyPoints"/> values, a
+    /// value that is not finite, or an option out of range (the message starts with that option's
+    /// name).</exception>
     public static SeriesAnomalyReport SpectralResidual(
         IReadOnlyList<double> series, Models.SpectralResidualOptions? options = null)
     {
         var data = Validate(series, MinimumAnomalyPoints, nameof(series));
 
         using var client = new InsightClient();
-        var result = client.SpectralResidual(data, ToEngine(options));
+        UInsight.SpectralResidualResult result;
+        try
+        {
+            result = client.SpectralResidual(data, ToEngine(options));
+        }
+        catch (InsightException e) when (e.Category == InsightErrorCategory.InvalidParameter
+                                         && e.Parameter is { } engineName
+                                         && OptionNames.TryGetValue(engineName, out var name))
+        {
+            // The engine names the option in its own spelling and states its rule; this layer only
+            // puts the option in ours. The rule itself stays the engine's.
+            var rule = e.Message.StartsWith(engineName + " ", StringComparison.Ordinal)
+                ? e.Message[(engineName.Length + 1)..]
+                : e.Message;
+            throw new ArgumentException($"{name} {rule}.", nameof(options), e);
+        }
 
         return new SeriesAnomalyReport
         {
@@ -84,45 +100,46 @@ public static class TimeSeriesAnalyzer
         };
     }
 
+    // The engine's option names, in the spelling of this library's options.
+    private static readonly IReadOnlyDictionary<string, string> OptionNames = new Dictionary<string, string>
+    {
+        ["averaging_window"] = nameof(Models.SpectralResidualOptions.AveragingWindow),
+        ["judgement_window"] = nameof(Models.SpectralResidualOptions.JudgementWindow),
+        ["threshold"] = nameof(Models.SpectralResidualOptions.Threshold),
+        ["min_zscore"] = nameof(Models.SpectralResidualOptions.MinZscore),
+        ["sensitivity"] = nameof(Models.SpectralResidualOptions.Sensitivity),
+        ["batch_size"] = nameof(Models.SpectralResidualOptions.BatchSize)
+    };
+
     // An option left null keeps the engine's own default, read from a default instance rather than
-    // restated here, so the paper's values have one home.
+    // restated here, so the paper's values have one home. The engine checks every option's range;
+    // this layer checks only what its own conversion needs -- a count has no negative in the
+    // engine's unsigned type.
     private static UInsight.SpectralResidualOptions? ToEngine(Models.SpectralResidualOptions? options)
     {
         if (options is null)
             return null;
 
-        // The engine rejects a bad option with one message listing every rule, so this layer names
-        // the option that broke one. Temporary: it restates the engine's rules, and goes once the
-        // engine reports which rule failed.
-        // TODO(upstream: UInsight — report which option rule failed; remove this re-validation then)
-        Require(options.AveragingWindow is null or >= 1, nameof(options.AveragingWindow), "must be at least 1");
-        Require(options.JudgementWindow is null or >= 1, nameof(options.JudgementWindow), "must be at least 1");
-        Require(options.Threshold is null || (options.Threshold > 0 && double.IsFinite(options.Threshold.Value)),
-            nameof(options.Threshold), "must be greater than 0");
-        Require(options.MinZscore is null || (options.MinZscore >= 0 && double.IsFinite(options.MinZscore.Value)),
-            nameof(options.MinZscore), "must be 0 or greater");
-        Require(options.Sensitivity is null or (> 0 and < 100), nameof(options.Sensitivity),
-            "must be between 0 and 100, exclusive");
-        Require(options.BatchSize is null or >= MinimumAnomalyPoints, nameof(options.BatchSize),
-            $"must be at least {MinimumAnomalyPoints}");
-
         var defaults = new UInsight.SpectralResidualOptions();
         return new UInsight.SpectralResidualOptions
         {
-            AveragingWindow = options.AveragingWindow is { } q ? checked((uint)q) : defaults.AveragingWindow,
-            JudgementWindow = options.JudgementWindow is { } z ? checked((uint)z) : defaults.JudgementWindow,
+            AveragingWindow = options.AveragingWindow is { } q
+                ? Count(q, nameof(options.AveragingWindow))
+                : defaults.AveragingWindow,
+            JudgementWindow = options.JudgementWindow is { } z
+                ? Count(z, nameof(options.JudgementWindow))
+                : defaults.JudgementWindow,
             Threshold = options.Threshold ?? defaults.Threshold,
             MinZscore = options.MinZscore ?? defaults.MinZscore,
             Sensitivity = options.Sensitivity ?? defaults.Sensitivity,
-            BatchSize = options.BatchSize is { } n ? checked((uint)n) : defaults.BatchSize
+            BatchSize = options.BatchSize is { } n ? Count(n, nameof(options.BatchSize)) : defaults.BatchSize
         };
     }
 
-    private static void Require(bool condition, string option, string rule)
-    {
-        if (!condition)
-            throw new ArgumentException($"{option} {rule}.", "options");
-    }
+    private static uint Count(int value, string option) =>
+        value >= 0
+            ? (uint)value
+            : throw new ArgumentException($"{option} must not be negative (got {value}).", "options");
 
     private static double[] Validate(IReadOnlyList<double> series, int minimum, string name)
     {
