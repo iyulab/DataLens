@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-25
+
 ### Changed
 
 - `TimeSeriesAnalyzer.SpectralResidual` no longer keeps its own copy of the
