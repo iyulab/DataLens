@@ -42,9 +42,9 @@ public class DistributionAnalyzer : IAnalyzer<DistributionReport>
                     Shape = shape
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // 분포 분석 실패 시 무시
+                warnings?.Add(AnalysisWarning.FromException("Distribution", ex, [col]));
             }
         }
 

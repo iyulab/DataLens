@@ -8,6 +8,14 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A clustering, feature, distribution, regression or changepoint step that
+  fails is reported in `warnings` instead of being dropped silently.** The
+  report field stays empty as before (or, for the gap statistic, K falls back
+  to 3), and an `AnalysisWarning` names the step, the affected columns where
+  there are any, and the engine's error category.
+
 ## [0.17.0] - 2026-09-29
 
 ### Changed

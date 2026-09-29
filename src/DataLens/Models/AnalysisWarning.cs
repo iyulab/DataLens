@@ -42,4 +42,22 @@ public record AnalysisWarning(
             AffectedColumns: affectedColumns,
             UpstreamCategory: ex.Category);
     }
+
+    /// <summary>
+    /// 분석기가 한 단계를 건너뛸 때 그 실패를 경고로 남긴다. <see cref="InsightException"/> 은
+    /// <see cref="FromInsightException"/> 로, 그 외 예외는 <see cref="WarningCategory.ComputationFailed"/> 로.
+    /// 실패를 삼키면 보고서 필드가 조용히 비어 원인이 보이지 않는다.
+    /// </summary>
+    public static AnalysisWarning FromException(
+        string analyzer,
+        Exception ex,
+        IReadOnlyList<string>? affectedColumns = null) => ex switch
+    {
+        InsightException ie => FromInsightException(analyzer, ie, affectedColumns),
+        _ => new AnalysisWarning(
+            Analyzer: analyzer,
+            Category: WarningCategory.ComputationFailed,
+            Message: ex.Message,
+            AffectedColumns: affectedColumns),
+    };
 }

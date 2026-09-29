@@ -27,9 +27,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
             optimalK = gap.BestK;
             gapValues = gap.GapValues;
         }
-        catch
+        catch (Exception ex)
         {
-            // GapStatistic 실패 시 기본 K=3
+            // GapStatistic 실패 시 기본 K=3 으로 계속한다 — 그 사실을 경고로 남긴다
+            warnings?.Add(AnalysisWarning.FromException("GapStatistic", ex));
         }
 
         // K-Means
@@ -85,7 +86,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 SilhouettePerSample = silhouettePerSample
             };
         }
-        catch { }
+        catch (Exception ex)
+        {
+            warnings?.Add(AnalysisWarning.FromException("KMeans", ex));
+        }
 
         // DBSCAN
         DbscanReport? dbscanReport = null;
@@ -99,7 +103,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 Labels = dbscan.Labels
             };
         }
-        catch { }
+        catch (Exception ex)
+        {
+            warnings?.Add(AnalysisWarning.FromException("DBSCAN", ex));
+        }
 
         // Hierarchical
         HierarchicalReport? hierarchicalReport = null;
@@ -113,7 +120,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 MergeDistances = hier.MergeDistances
             };
         }
-        catch { }
+        catch (Exception ex)
+        {
+            warnings?.Add(AnalysisWarning.FromException("Hierarchical", ex));
+        }
 
         // HDBSCAN
         HdbscanReport? hdbscanReport = null;
@@ -131,7 +141,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
                 Probabilities = hdb.Probabilities
             };
         }
-        catch { }
+        catch (Exception ex)
+        {
+            warnings?.Add(AnalysisWarning.FromException("HDBSCAN", ex));
+        }
 
         return Task.FromResult(new ClusterReport
         {

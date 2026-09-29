@@ -51,6 +51,27 @@ public class ClusterAnalyzerTests
         Assert.NotEqual(single.MergeDistances, report.Hierarchical.MergeDistances);
     }
 
+    /// A clustering step that fails is reported, not swallowed: the analyzer
+    /// carries on with its fallback and a warning names the step.
+    [Fact]
+    public async Task FailingAlgorithm_IsReportedAsWarning()
+    {
+        var df = DataPipeline.FromData(MakeThreeClusters(rows: 30)).ToDataFrame();
+        var warnings = new List<DataLens.Models.AnalysisWarning>();
+        var report = await new ClusterAnalyzer().AnalyzeAsync(
+            new DataAdapter(df),
+            // k range [2, 1] is empty: the gap statistic is refused and the
+            // analyzer falls back to K = 3.
+            new AnalysisOptions { MaxClusters = 1 },
+            warnings);
+
+        Assert.NotNull(report.KMeans);
+        Assert.Equal(3u, report.KMeans!.K);
+        var w = Assert.Single(warnings, w => w.Analyzer == "GapStatistic");
+        Assert.Equal(DataLens.Models.WarningCategory.UpstreamError, w.Category);
+        Assert.False(string.IsNullOrWhiteSpace(w.Message));
+    }
+
     [Fact]
     public async Task SmallDataset_UsesStandardKMeans()
     {

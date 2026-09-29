@@ -51,9 +51,9 @@ public class RegressionAnalyzer : IAnalyzer<RegressionReport>
                     FPValue = result.FPValue
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // 회귀 실패 시 무시
+                warnings?.Add(AnalysisWarning.FromException("Regression", ex, [feature, targetCol]));
             }
         }
 

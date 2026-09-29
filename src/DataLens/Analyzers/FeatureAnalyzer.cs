@@ -46,7 +46,10 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                 HighCorrPairsCount = fiResult.NHighCorrPairs
             };
         }
-        catch { }
+        catch (Exception ex)
+        {
+            warnings?.Add(AnalysisWarning.FromException("FeatureImportance", ex));
+        }
 
         // 타겟이 지정된 경우 추가 분석
         AnovaSummary? anova = null;
@@ -85,7 +88,10 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                             SelectedCount = anovaResult.NSelected
                         };
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        warnings?.Add(AnalysisWarning.FromException("ANOVA", ex));
+                    }
 
                     try
                     {
@@ -102,7 +108,10 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                         }
                         mutualInfo = new MutualInfoSummary { Features = miFeatures };
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        warnings?.Add(AnalysisWarning.FromException("MutualInfo", ex));
+                    }
                 }
             }
             // 숫자 타겟 → PermutationImportance
@@ -138,7 +147,10 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                         };
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    warnings?.Add(AnalysisWarning.FromException("PermutationImportance", ex));
+                }
             }
         }
 

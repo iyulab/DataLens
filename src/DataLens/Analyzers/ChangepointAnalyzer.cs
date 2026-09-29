@@ -49,9 +49,10 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                     Segments = segments
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // 개별 컬럼 실패 시 건너뛰기 (다른 분석기와 동일한 패턴)
+                // 개별 컬럼 실패는 그 컬럼만 건너뛴다
+                warnings?.Add(AnalysisWarning.FromException("Changepoints", ex, [col]));
             }
         }
 
@@ -80,9 +81,10 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                     };
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // 다변량 실패는 단변량 결과를 막지 않는다
+                warnings?.Add(AnalysisWarning.FromException("Changepoints", ex));
             }
         }
 
