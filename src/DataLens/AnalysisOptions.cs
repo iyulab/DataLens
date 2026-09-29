@@ -86,9 +86,10 @@ public class AnalysisOptions
     public uint HdbscanMinSamples { get; set; } = 0;
 
     /// <summary>
-    /// PELT 변화점 탐지 비용 함수. 0 = L2 (mean change), 1 = Normal (mean+variance).
+    /// PELT 변화점 탐지 비용 함수. <see cref="DataLens.ChangepointCost.L2"/> = 평균 변화,
+    /// <see cref="DataLens.ChangepointCost.Normal"/> = 평균+분산 변화.
     /// </summary>
-    public uint ChangepointCost { get; set; } = 0;
+    public ChangepointCost ChangepointCost { get; set; } = ChangepointCost.L2;
 
     /// <summary>
     /// PELT 변화점 패널티. 0.0이면 BIC 자동 계산.

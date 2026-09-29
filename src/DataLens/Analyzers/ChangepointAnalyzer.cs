@@ -33,7 +33,7 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
 
                 var peltResult = client.Pelt(
                     data,
-                    cost: options.ChangepointCost,
+                    cost: ToPeltCost(options.ChangepointCost),
                     penalty: options.ChangepointPenalty,
                     minSegmentLen: options.ChangepointMinSegmentLength);
 
@@ -67,7 +67,7 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                 {
                     var multiResult = client.PeltMulti(
                         matrix,
-                        cost: options.ChangepointCost,
+                        cost: ToPeltCost(options.ChangepointCost),
                         penalty: options.ChangepointPenalty,
                         minSegmentLen: options.ChangepointMinSegmentLength);
 
@@ -92,6 +92,13 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
             Multivariate = multivariate
         });
     }
+
+    private static PeltCost ToPeltCost(ChangepointCost cost) => cost switch
+    {
+        ChangepointCost.L2 => PeltCost.L2,
+        ChangepointCost.Normal => PeltCost.Normal,
+        _ => throw new ArgumentOutOfRangeException(nameof(cost), cost, null),
+    };
 
     private static List<SegmentSummary> BuildSegmentSummaries(double[] data, uint[] changepoints)
     {

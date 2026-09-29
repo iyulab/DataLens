@@ -105,7 +105,7 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
         HierarchicalReport? hierarchicalReport = null;
         try
         {
-            var hier = client.Hierarchical(matrix, 0, optimalK); // linkage=0 (Ward)
+            var hier = client.Hierarchical(matrix, Linkage.Ward, optimalK);
             hierarchicalReport = new HierarchicalReport
             {
                 NClusters = hier.NClusters,

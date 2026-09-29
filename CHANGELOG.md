@@ -8,6 +8,30 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-29
+
+### Changed
+
+- **`AnalysisOptions.ChangepointCost` is a `ChangepointCost` enum**
+  (`L2` or `Normal`) instead of a `uint` code. Code that assigned a number no
+  longer compiles; write `ChangepointCost.Normal` for what was `1`.
+- Built on UInsight 0.23.0 (0.22.0 before). Two of its changes reach DataLens
+  reports:
+  - K-means and HDBSCAN clusters are numbered by first appearance (the first
+    row is in cluster 0), as DBSCAN and hierarchical clusters already were.
+    The grouping is unchanged; the numbers attached to it can differ.
+  - Permutation importance no longer depends on column order or names, so its
+    scores for the same seed differ from earlier versions.
+
+### Fixed
+
+- **The hierarchical clustering report used single linkage, not Ward.** The
+  analyzer passed the linkage code `0` — single linkage — under a comment
+  saying Ward. Single linkage chains clusters together through intermediate
+  points, so `Hierarchical` in the cluster report could differ markedly from
+  the Ward result it claimed to be. It now requests `Linkage.Ward`, which
+  UInsight 0.23.0 makes a named value instead of a number.
+
 ## [0.16.0] - 2026-09-25
 
 ### Changed

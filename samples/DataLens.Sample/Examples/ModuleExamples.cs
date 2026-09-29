@@ -99,7 +99,7 @@ internal static class ModuleExamples
         var options = new AnalysisOptions
         {
             IncludeChangepoints = true,
-            ChangepointCost = 1, // 0=L2 mean, 1=Normal mean+variance
+            ChangepointCost = ChangepointCost.Normal, // mean + variance
             ChangepointMinSegmentLength = 10
         };
         var analysis = await DataLensEngine.Analyze(filePath, options);

@@ -31,6 +31,26 @@ public class ClusterAnalyzerTests
         Assert.True(report.KMeans.Labels.Length == 90);
     }
 
+    /// The hierarchical report is Ward linkage. It used to pass the code 0,
+    /// which is single linkage, under a comment that said Ward.
+    [Fact]
+    public async Task Hierarchical_UsesWardLinkage()
+    {
+        var df = DataPipeline.FromData(MakeThreeClusters(rows: 60)).ToDataFrame();
+        var adapter = new DataAdapter(df);
+        var report = await new ClusterAnalyzer().AnalyzeAsync(adapter, new AnalysisOptions { MaxClusters = 6 });
+
+        Assert.NotNull(report.Hierarchical);
+        var matrix = adapter.ToScaledMatrix();
+        using var client = new UInsight.InsightClient();
+        var k = report.Hierarchical!.NClusters;
+        var ward = client.Hierarchical(matrix, UInsight.Linkage.Ward, k);
+        var single = client.Hierarchical(matrix, UInsight.Linkage.Single, k);
+
+        Assert.Equal(ward.MergeDistances, report.Hierarchical.MergeDistances);
+        Assert.NotEqual(single.MergeDistances, report.Hierarchical.MergeDistances);
+    }
+
     [Fact]
     public async Task SmallDataset_UsesStandardKMeans()
     {
