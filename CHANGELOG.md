@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-01
+
+### Added
+
+- `SeriesAnomalyPoint.NearEdge` -- whether a point lies within a few places of
+  either end of its batch, where the transform's boundary handling moves the
+  saliency most. A position, not a verdict: a real anomaly there is still
+  `IsAnomaly`.
+
 ### Changed
 
 - Depends on `UInsight` 0.24.0. Its C# surface and the native analyses it calls
