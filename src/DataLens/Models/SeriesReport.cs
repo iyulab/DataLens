@@ -86,6 +86,13 @@ public sealed record SeriesAnomalyPoint
 
     /// <summary>Whether the point is an anomaly.</summary>
     public bool IsAnomaly { get; init; }
+
+    /// <summary>
+    /// Whether the point lies within a few places of an end of its batch, where the transform's
+    /// boundary handling moves the saliency most. A position, not a verdict: a real anomaly there is
+    /// still <see cref="IsAnomaly"/>, but a flag that appears only at an end is worth a second look.
+    /// </summary>
+    public bool NearEdge { get; init; }
 }
 
 /// <summary>Result of <see cref="Analyzers.TimeSeriesAnalyzer.SpectralResidual"/>.</summary>

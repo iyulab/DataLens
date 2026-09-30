@@ -93,7 +93,8 @@ public static class TimeSeriesAnalyzer
                     Expected = p.Expected,
                     Lower = p.Lower,
                     Upper = p.Upper,
-                    IsAnomaly = p.IsAnomaly
+                    IsAnomaly = p.IsAnomaly,
+                    NearEdge = p.NearEdge
                 })
                 .ToList(),
             Anomalies = result.Anomalies.Select(i => checked((int)i)).ToList()

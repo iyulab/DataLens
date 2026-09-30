@@ -92,6 +92,18 @@ public class TimeSeriesAnalyzerTests
     }
 
     [Fact]
+    public void SpectralResidual_marks_the_points_near_either_end()
+    {
+        var points = TimeSeriesAnalyzer.SpectralResidual(NoisySine(120, 24, 5)).Points;
+
+        // Both ends, not only the tail: the transform is circular, so the block appended after the
+        // last point also sits next to the first.
+        Assert.True(points[0].NearEdge);
+        Assert.True(points[^1].NearEdge);
+        Assert.False(points[60].NearEdge);
+    }
+
+    [Fact]
     public void An_option_left_unset_keeps_the_engine_default()
     {
         // Setting only the threshold must not zero the other options: the result matches the
