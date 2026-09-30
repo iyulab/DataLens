@@ -8,6 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `UInsight` 0.24.0. Its C# surface and the native analyses it calls
+  are unchanged; the release changed the library's WebAssembly binding.
+
 ## [0.17.1] - 2026-09-30
 
 Depends on `UInsight` 0.23.1 (0.23.0 before), whose HDBSCAN refuses
