@@ -8,6 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-09-30
+
+Depends on `UInsight` 0.23.1 (0.23.0 before), whose HDBSCAN refuses
+`min_samples` above the number of points and returns all noise when
+`min_cluster_size` exceeds it -- both used to come back as one cluster holding
+every point.
+
 ### Fixed
 
 - **A clustering, feature, distribution, regression or changepoint step that
