@@ -8,6 +8,12 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `UInsight` 0.25.0. Its `InsightException` adds `Reason` and
+  `Details` (the refusal's code and fields); the analyses DataLens calls are
+  unchanged.
+
 ## [0.18.0] - 2026-10-01
 
 ### Added
