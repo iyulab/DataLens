@@ -10,9 +10,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
-- Depends on `UInsight` 0.25.0. Its `InsightException` adds `Reason` and
-  `Details` (the refusal's code and fields); the analyses DataLens calls are
-  unchanged.
+- Depends on `UInsight` 0.26.0. Its `InsightException` adds `Reason` and
+  `Details` (the refusal's code and fields). Some analyses now refuse input
+  they used to adjust: `lof` a `k` outside 1..=n-1, `gap_statistic` a `k_max`
+  above the number of points, `permutation_importance` a NaN target.
 
 ## [0.18.0] - 2026-10-01
 

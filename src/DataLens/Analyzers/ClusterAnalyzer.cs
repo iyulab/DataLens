@@ -23,7 +23,10 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
         double[]? gapValues = null;
         try
         {
-            var gap = client.GapStatistic(matrix, 2, options.MaxClusters);
+            // 탐색 상한은 MaxClusters 이되 행 수를 넘지 않는다 — UInsight 0.26 부터
+            // 행 수보다 큰 k_max 는 조정되지 않고 거절된다.
+            uint kMax = Math.Min(options.MaxClusters, (uint)matrix.GetLength(0));
+            var gap = client.GapStatistic(matrix, 2, kMax);
             optimalK = gap.BestK;
             gapValues = gap.GapValues;
         }
