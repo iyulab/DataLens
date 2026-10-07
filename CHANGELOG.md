@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-10-07
+
+### Changed
+
+- Depends on `UInsight` 0.28.0 (from 0.26.0). DataLens's own analyses and
+  reports are unchanged: the UInsight surfaces that moved (statistical process
+  control, moved to UAnalytics in 0.27.0; distribution fitting's candidates in
+  0.28.0) are ones DataLens does not call.
+
 ## [0.18.1] - 2026-10-03
 
 ### Changed
