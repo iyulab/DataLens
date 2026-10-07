@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-10-07
+
+### Changed
+
+- Follows `UInsight` 0.29.0: a row whose length differs and a non-finite cell are
+  refused with their position. DataLens imputes missing
+  values before the multivariate analyses, so its output is unchanged.
+- Runs on `linux-arm64`: `UInsight` 0.29.0 carries a native library for it.
+
 ## [0.18.2] - 2026-10-07
 
 ### Changed
