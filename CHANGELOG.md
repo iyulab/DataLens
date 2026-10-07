@@ -8,6 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-10-08
+
+### Fixed
+
+- Follows `UInsight` 0.29.1, which loads the right native library on Linux arm64 and
+  Intel macOS when the application is built without a runtime identifier.
+
 ## [0.18.3] - 2026-10-07
 
 ### Changed
