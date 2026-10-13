@@ -8,6 +8,12 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.6] - 2026-10-13
+
+### Changed
+
+- Depends on `UInsight` 0.31.0.
+
 ## [0.18.5] - 2026-10-13
 
 ### Changed
