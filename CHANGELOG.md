@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-10-13
+
+### Changed
+
+- Follows `UInsight` 0.30.0. An analysis the engine refuses now carries a precise
+  reason in the warning: too few rows is "insufficient data" (with the rows needed)
+  rather than "degenerate data", an option outside its range names its bounds, and
+  empty input is reported as such.
+
 ## [0.18.4] - 2026-10-08
 
 ### Fixed
