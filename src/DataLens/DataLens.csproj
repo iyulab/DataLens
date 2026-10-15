@@ -10,10 +10,11 @@
   <ItemGroup>
     <PackageReference Include="FilePrepper" />
     <PackageReference Include="UInsight" />
-    <!-- Security: lift FilePrepper→EPPlus's transitive System.Security.Cryptography.Xml floor above
-         the four High advisories against 10.0.7 (GHSA-cvvh-rhrc-wg4q, GHSA-g8r8-53c2-pm3f,
-         GHSA-23rf-6693-g89p, GHSA-8q5v-6pqq-x66h). Direct reference so the fixed floor ships in
-         this package's own graph; drop when the FilePrepper floor (0.7.4+) lands here. -->
+    <!-- Security: lift FilePrepper→EPPlus's transitive System.Security.Cryptography.Pkcs and .Xml
+         (10.0.10) to 10.0.13, past the advisories fixed there (Pkcs: GHSA-846f-f764-76mx,
+         GHSA-2fmv-rv2c-59x7; Xml: GHSA-7hqp-7c5m-4vq6). Direct references so the fixed floor ships
+         in this package's own graph; drop once FilePrepper's own dependency floor reaches 10.0.13. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 

@@ -8,6 +8,19 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.18.8] - 2026-10-15
+
+### Changed
+
+- Depends on `UInsight` 0.32.1 and `FilePrepper` 0.11.0 (was 0.7.4).
+
+### Security
+
+- `System.Security.Cryptography.Pkcs` and `System.Security.Cryptography.Xml`, which
+  `FilePrepper` brings in through `EPPlus` at 10.0.10, are lifted to 10.0.13 — past
+  the denial-of-service advisories GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7 (Pkcs)
+  and GHSA-7hqp-7c5m-4vq6 (Xml), all fixed in 10.0.13.
+
 ## [0.18.7] - 2026-10-14
 
 ### Changed
