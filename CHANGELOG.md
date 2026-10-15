@@ -8,6 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `UInsight` 0.32.2 (rebuilt on a newer `u-analytics`; nothing
+  `UInsight` exposes changes).
+
 ## [0.18.8] - 2026-10-15
 
 ### Changed
