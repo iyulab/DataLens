@@ -8,10 +8,20 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-16
+
 ### Changed
 
-- Depends on `UInsight` 0.33.0 (adds `GetCodes()`, which DataLens does not
-  call; nothing it calls changes).
+- Depends on `UInsight` 0.34.0 (by way of 0.33.0, which added `GetCodes()`,
+  not called here). Two changes reach a report:
+  - **Mahalanobis outliers** are judged against the distance's exact law
+    (a scaled Beta, not χ²): on small samples more rows are flagged — the
+    χ² threshold flagged far fewer than its level said, and with few rows
+    none at all. Mahalanobis now needs at least `columns + 2` rows; below
+    that the analyzer reports a warning instead of a result.
+  - **Profiling**: a column's `StdDev` is `null` when the data does not
+    define it (a single value), not `NaN`; `Mean` / `StdDev` / `Min` / `Max`
+    stay `null` for a non-numeric column.
 
 ## [0.18.8] - 2026-10-15
 

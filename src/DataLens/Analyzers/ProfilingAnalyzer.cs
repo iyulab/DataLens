@@ -24,7 +24,6 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
             {
                 var col = profile.Columns[i];
                 var totalCount = (long)col.ValidCount + (long)col.NullCount;
-                var isNumeric = col.DataType == InsightDataType.Numeric;
                 columns.Add(new ColumnProfile
                 {
                     Name = columnNames[i],
@@ -35,10 +34,12 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
                     NullPercentage = totalCount > 0
                         ? (double)col.NullCount / totalCount * 100.0
                         : 0,
-                    Mean = isNumeric ? col.Mean : null,
-                    StdDev = isNumeric ? col.StdDev : null,
-                    Min = isNumeric ? col.Min : null,
-                    Max = isNumeric ? col.Max : null
+                    // null for a non-numeric column and for a statistic the
+                    // data does not define (the standard deviation of one value).
+                    Mean = col.Mean,
+                    StdDev = col.StdDev,
+                    Min = col.Min,
+                    Max = col.Max
                 });
             }
 
