@@ -8,6 +8,16 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-10-18
+
+### Changed
+
+- Depends on `UInsight` 0.36.0 (by way of 0.35.0). Neither changes what a
+  report says: their additions (`lof` by contamination, regression fitted
+  values and residuals, the reason a normality test is absent) are in
+  u-insight's WebAssembly and Rust API, the C functions DataLens calls keep
+  their behaviour, and DataLens computes its univariate Hampel fences itself.
+
 ## [0.19.0] - 2026-10-16
 
 ### Changed
