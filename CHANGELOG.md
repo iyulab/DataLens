@@ -8,6 +8,14 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `UInsight` 0.36.2 (by way of 0.36.1).
+- Depends on `FilePrepper` 0.11.1, whose dependency graph already carries
+  `System.Security.Cryptography.Pkcs` and `.Xml` 10.0.13. The direct
+  references DataLens held to lift those two packages past their advisories
+  are removed; the resolved versions are unchanged.
+
 ## [0.19.1] - 2026-10-18
 
 ### Changed
