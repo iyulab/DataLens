@@ -8,6 +8,21 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-10-21
+
+### Fixed
+
+By way of `UInsight` 0.36.1 and 0.36.2 — numeric columns in a small unit (values near 1e-9) are now
+analysed as they would be in any other unit:
+
+- The correlation section's condition number is no longer reported as infinite, and the regression
+  section's VIFs are no longer NaN (or the regression refused).
+- PCA no longer reports explained-variance ratios of 0, the Mahalanobis outlier section no longer
+  refuses every column as near-zero variance, and permutation importances are no longer 0.
+- KMeans without a seed ran every restart from the same seed, so the extra restarts changed nothing;
+  each restart now starts from its own seed. A clustering can differ from before, never with a higher
+  within-cluster sum of squares.
+
 ### Changed
 
 - Depends on `UInsight` 0.36.2 (by way of 0.36.1).
