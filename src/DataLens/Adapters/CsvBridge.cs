@@ -17,16 +17,16 @@ public static class CsvBridge
             throw new FileNotFoundException($"File not found: {filePath}", filePath);
 
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        var pipeline = ext switch
+        // A delimited file is read straight into the frame's columns: through a pipeline it was a dictionary per
+        // row first, about twenty times the file in memory.
+        var df = ext switch
         {
-            ".csv" or ".tsv" => await DataPipeline.FromCsvAsync(filePath, encoding: options.Encoding),
-            ".json" => DataPipeline.FromData(await LoadJsonAsync(filePath)),
-            ".xlsx" or ".xls" => await DataPipeline.FromExcelAsync(filePath),
+            ".csv" or ".tsv" => await DataFrame.FromCsvAsync(filePath, encoding: options.Encoding),
+            ".json" => DataPipeline.FromData(await LoadJsonAsync(filePath)).ToDataFrame(),
+            ".xlsx" or ".xls" => (await DataPipeline.FromExcelAsync(filePath)).ToDataFrame(),
             _ => throw new NotSupportedException(
                 $"Unsupported file extension '{ext}' for '{filePath}'. Supported: .csv, .tsv, .json, .xlsx, .xls")
         };
-
-        var df = pipeline.ToDataFrame();
 
         if (options.RemoveDuplicateRows)
             df = RemoveDuplicateRows(df);
@@ -51,7 +51,7 @@ public static class CsvBridge
             }
 
             if (seen.Add(new RowKey(values)))
-                unique.Add(row);
+                unique.Add(new Dictionary<string, string>(row));
         }
 
         if (unique.Count == df.RowCount)
