@@ -5,6 +5,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- A warning fails the build; vulnerability advisories (NU1901-NU1904) stay warnings, so a new
+         advisory against a pinned package does not stop the tree from building. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
     <LangVersion>latest</LangVersion>
 
     <!-- NuGet 공통 메타데이터 -->
