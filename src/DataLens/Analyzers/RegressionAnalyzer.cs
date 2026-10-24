@@ -1,3 +1,4 @@
+using System.Globalization;
 using DataLens.Adapters;
 using DataLens.Models;
 using UInsight;
@@ -75,7 +76,7 @@ public class RegressionAnalyzer : IAnalyzer<RegressionReport>
             row.TryGetValue(xCol, out var xVal);
             row.TryGetValue(yCol, out var yVal);
 
-            if (double.TryParse(xVal, out var x) && double.TryParse(yVal, out var y))
+            if (double.TryParse(xVal, NumberStyles.Float, CultureInfo.InvariantCulture, out var x) && double.TryParse(yVal, NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
             {
                 xList.Add(x);
                 yList.Add(y);

@@ -1,3 +1,4 @@
+using System.Globalization;
 using FilePrepper.Pipeline;
 
 namespace DataLens.Adapters;
@@ -76,7 +77,7 @@ public class DataAdapter
             {
                 if (string.IsNullOrWhiteSpace(val)) continue;
                 totalNonEmpty++;
-                if (double.TryParse(val, out _))
+                if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
                     numericCount++;
             }
 
@@ -107,7 +108,7 @@ public class DataAdapter
             foreach (var row in rows)
             {
                 row.TryGetValue(cols[j], out var val);
-                matrix[i, j] = double.TryParse(val, out var d) ? d : double.NaN;
+                matrix[i, j] = double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : double.NaN;
                 i++;
             }
         }
@@ -121,7 +122,7 @@ public class DataAdapter
     public double[] ToArray(string column)
     {
         var values = _dataFrame.GetColumn(column);
-        return values.Select(v => double.TryParse(v, out var d) ? d : double.NaN).ToArray();
+        return values.Select(v => double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : double.NaN).ToArray();
     }
 
     /// <summary>
@@ -163,7 +164,7 @@ public class DataAdapter
             for (int j = 0; j < cols.Length; j++)
             {
                 row.TryGetValue(cols[j], out var val);
-                if (double.TryParse(val, out var d))
+                if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
                     values[j] = d;
                 else
                 {
@@ -248,7 +249,7 @@ public class DataAdapter
             foreach (var row in rows)
             {
                 row.TryGetValue(cols[j], out var val);
-                matrix[i, j] = double.TryParse(val, out var d) ? d : double.NaN;
+                matrix[i, j] = double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : double.NaN;
                 i++;
             }
         }

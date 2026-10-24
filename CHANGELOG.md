@@ -8,6 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Fixed
+
+- Numbers are read in the invariant culture when columns are classified and turned into arrays. On a comma-decimal
+  machine (de-DE) the cell `1.5` was read as 15, so every statistic and model over it was off by a power of ten.
+
 ## [0.19.2] - 2026-10-21
 
 ### Fixed
