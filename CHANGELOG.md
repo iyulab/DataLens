@@ -8,6 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- A CSV or TSV is read straight into FilePrepper's column-held frame (FilePrepper 0.13.0), and descriptive statistics
+  are computed from each column rather than from a pipeline copy of the table. Loading a 22 MB, million-row CSV took
+  1.5 GB and now takes 360 MB; profiling it took 2.0 GB and now takes 1.2 GB — most of what remains is the native
+  profiler's.
+
 ### Fixed
 
 - Numbers are read in the invariant culture when columns are classified and turned into arrays. On a comma-decimal

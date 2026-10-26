@@ -12,11 +12,11 @@ public class DescriptiveAnalyzer : IAnalyzer<DescriptiveReport>
         ICollection<AnalysisWarning>? warnings = null)
     {
         var columns = new List<ColumnDescriptive>();
-        var pipeline = DataPipeline.FromData(adapter.DataFrame.Rows);
 
         foreach (var col in adapter.NumericColumns)
         {
-            var stats = pipeline.GetStatistics(col);
+            // From the column itself: a pipeline of the whole table first was a dictionary per row, a full copy.
+            var stats = ColumnStatistics.Of(col, adapter.DataFrame.GetColumn(col));
             var values = adapter.ToCleanArray(col);
 
             double? skewness = null;
