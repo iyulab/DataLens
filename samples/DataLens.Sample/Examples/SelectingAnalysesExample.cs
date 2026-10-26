@@ -11,13 +11,13 @@ internal static class SelectingAnalysesExample
     {
         var options = new AnalysisOptions
         {
-            IncludeProfiling   = true,
+            IncludeProfiling = true,
             IncludeDescriptive = true,
             IncludeCorrelation = true,
-            IncludeClustering  = false,
-            IncludeOutliers    = false,
-            IncludeFeatures    = false,
-            IncludePca         = false,
+            IncludeClustering = false,
+            IncludeOutliers = false,
+            IncludeFeatures = false,
+            IncludePca = false,
             IncludeChangepoints = false,
             CorrelationThreshold = 0.8
         };

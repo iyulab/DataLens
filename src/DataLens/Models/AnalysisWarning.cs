@@ -52,12 +52,12 @@ public record AnalysisWarning(
         string analyzer,
         Exception ex,
         IReadOnlyList<string>? affectedColumns = null) => ex switch
-    {
-        InsightException ie => FromInsightException(analyzer, ie, affectedColumns),
-        _ => new AnalysisWarning(
-            Analyzer: analyzer,
-            Category: WarningCategory.ComputationFailed,
-            Message: ex.Message,
-            AffectedColumns: affectedColumns),
-    };
+        {
+            InsightException ie => FromInsightException(analyzer, ie, affectedColumns),
+            _ => new AnalysisWarning(
+                Analyzer: analyzer,
+                Category: WarningCategory.ComputationFailed,
+                Message: ex.Message,
+                AffectedColumns: affectedColumns),
+        };
 }
