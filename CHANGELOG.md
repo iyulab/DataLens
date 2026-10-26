@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-26
+
 ### Changed
 
 - A CSV or TSV is read straight into FilePrepper's column-held frame (FilePrepper 0.13.0), and descriptive statistics
