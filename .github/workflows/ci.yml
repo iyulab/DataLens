@@ -27,6 +27,9 @@ jobs:
       - name: Restore (NuGet security audit gate)
         run: dotnet restore -p:AuditPipeline=true
 
+      - name: Check formatting
+        run: dotnet format DataLens.slnx --verify-no-changes --no-restore
+
       - name: Build
         run: dotnet build -c Release --no-restore
 
