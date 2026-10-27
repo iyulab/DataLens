@@ -17,38 +17,7 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
             var csvString = adapter.ToCsvString();
             var profile = client.ProfileCsv(csvString);
 
-            var columns = new List<ColumnProfile>();
-            var columnNames = adapter.AllColumns;
-
-            for (int i = 0; i < profile.Columns.Length && i < columnNames.Count; i++)
-            {
-                var col = profile.Columns[i];
-                var totalCount = (long)col.ValidCount + (long)col.NullCount;
-                columns.Add(new ColumnProfile
-                {
-                    Name = columnNames[i],
-                    Index = i,
-                    DataType = MapDataType(col.DataType),
-                    ValidCount = (long)col.ValidCount,
-                    NullCount = (long)col.NullCount,
-                    NullPercentage = totalCount > 0
-                        ? (double)col.NullCount / totalCount * 100.0
-                        : 0,
-                    // null for a non-numeric column and for a statistic the
-                    // data does not define (the standard deviation of one value).
-                    Mean = col.Mean,
-                    StdDev = col.StdDev,
-                    Min = col.Min,
-                    Max = col.Max
-                });
-            }
-
-            return Task.FromResult(new ProfileReport
-            {
-                RowCount = adapter.RowCount,
-                ColumnCount = adapter.ColumnCount,
-                Columns = columns
-            });
+            return Task.FromResult(BuildReport(profile, adapter.AllColumns, adapter.RowCount, adapter.ColumnCount));
         }
         catch (InsightException ex)
         {
@@ -65,6 +34,47 @@ public class ProfilingAnalyzer : IAnalyzer<ProfileReport>
                 Columns = []
             });
         }
+    }
+
+    /// <summary>The report for an engine profile whose columns are named by <paramref name="columnNames"/>
+    /// (the engine's column summaries carry an index, not a name).</summary>
+    internal static ProfileReport BuildReport(
+        ProfileResult profile,
+        IReadOnlyList<string> columnNames,
+        int rowCount,
+        int columnCount)
+    {
+        var columns = new List<ColumnProfile>();
+
+        for (int i = 0; i < profile.Columns.Length && i < columnNames.Count; i++)
+        {
+            var col = profile.Columns[i];
+            var totalCount = (long)col.ValidCount + (long)col.NullCount;
+            columns.Add(new ColumnProfile
+            {
+                Name = columnNames[i],
+                Index = i,
+                DataType = MapDataType(col.DataType),
+                ValidCount = (long)col.ValidCount,
+                NullCount = (long)col.NullCount,
+                NullPercentage = totalCount > 0
+                    ? (double)col.NullCount / totalCount * 100.0
+                    : 0,
+                // null for a non-numeric column and for a statistic the
+                // data does not define (the standard deviation of one value).
+                Mean = col.Mean,
+                StdDev = col.StdDev,
+                Min = col.Min,
+                Max = col.Max
+            });
+        }
+
+        return new ProfileReport
+        {
+            RowCount = rowCount,
+            ColumnCount = columnCount,
+            Columns = columns
+        };
     }
 
     private static string MapDataType(InsightDataType dataType) => dataType switch

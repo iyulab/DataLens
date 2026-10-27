@@ -246,6 +246,15 @@ public static class DataLensEngine
         CsvLoadOptions? loadOptions,
         CancellationToken cancellationToken = default)
     {
+        // Default load options and a plain CSV: the engine reads the file itself, so a large file
+        // is never held as a table here. Anything else — or an engine refusal — loads as before.
+        if (loadOptions is null)
+        {
+            var direct = await Task.Run(() => FileProfiler.TryProfile(filePath), cancellationToken).ConfigureAwait(false);
+            if (direct is not null)
+                return direct;
+        }
+
         var dataFrame = await CsvBridge.LoadAsync(filePath, loadOptions).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await Task.Run(() =>

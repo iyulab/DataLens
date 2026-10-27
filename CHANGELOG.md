@@ -14,8 +14,16 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
   once instead of twice (peak memory for profiling a 1,000,000-row, 6-column file
   falls about threefold), its low-variance count no longer depends on the data's
   unit, and `ProfileCsv` failures carry the engine's error code. It also adds
-  ACF/PACF, the ADF and KPSS tests and `ProfileCsvFile`, which DataLens does not
-  call yet.
+  ACF/PACF and the ADF and KPSS tests, which DataLens does not call yet.
+- `DataLensEngine.Profile(path)` with default load options hands a plain
+  comma-separated UTF-8 `.csv` to the engine (`ProfileCsvFile`), which reads the
+  file itself: the file is no longer loaded into a frame and written back out as one
+  CSV string first. The report is the same. A file that is not plainly that — a
+  byte-order mark, another delimiter or encoding, a quoted, padded, blank or
+  repeated header name, another extension or format, or a row the engine
+  refuses — is loaded as before. Measured in a host process profiling a
+  1,000,000-row, 6-column file, peak memory goes from about 1.0 GB (with the
+  UInsight 0.37.0 saving) to about 0.5 GB, and the run takes less than half the time.
 
 ## [0.20.0] - 2026-10-26
 
