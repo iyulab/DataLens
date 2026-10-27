@@ -23,7 +23,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
-- Depends on `UInsight` 0.37.0 (from 0.36.2): its CSV parsing holds each field
+- Depends on `UInsight` 0.38.0 (from 0.36.2; 0.38.0 adds an STL decomposition that
+  `DataLens` does not expose): through 0.37.0 its CSV parsing holds each field
   once instead of twice (peak memory for profiling a 1,000,000-row, 6-column file
   falls about threefold), its low-variance count no longer depends on the data's
   unit, and `ProfileCsv` failures carry the engine's error code. It also adds
