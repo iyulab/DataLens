@@ -117,6 +117,13 @@ internal static class ModuleExamples
         SeriesAnomalyReport report = TimeSeriesAnalyzer.SpectralResidual(
             series, new SpectralResidualOptions { Threshold = 3.0 });
         Console.WriteLine($"anomalies: {string.Join(", ", report.Anomalies)}");  // 50
+
+        SeriesAutocorrelation correlogram = TimeSeriesAnalyzer.Autocorrelation(series, maxLag: 14);
+        Console.WriteLine($"acf at the period: {correlogram.Acf[7]:F2}");         // 0.49, past the 0.21 band
+
+        SeriesStationarity tests = TimeSeriesAnalyzer.Stationarity(series);
+        Console.WriteLine($"ADF rejects a unit root at 5%: {tests.Adf.Levels[1].Rejected}");
+        Console.WriteLine($"KPSS rejects stationarity at 5%: {tests.Kpss.Levels[2].Rejected}");
         return Task.CompletedTask;
     }
 }

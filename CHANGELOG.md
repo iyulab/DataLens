@@ -8,13 +8,26 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Added
+
+- `TimeSeriesAnalyzer.Autocorrelation` — the autocorrelation function (lags 0 to
+  `maxLag`, with the white-noise threshold and Bartlett's per-lag limits) and the
+  partial autocorrelation function (lags 1 to a largest lag below half the sample,
+  with its threshold), the evidence for choosing a moving-average and an
+  autoregressive order. Needs at least 4 observations.
+- `TimeSeriesAnalyzer.Stationarity` — the augmented Dickey-Fuller test (H0: a unit
+  root) and the KPSS test (H0: stationary), each with its statistic, lags, critical
+  values and the levels it rejects at, around a constant level or a linear trend
+  (`aroundTrend`). Needs at least 10 observations. Which differencing to apply is
+  left to the caller.
+
 ### Changed
 
 - Depends on `UInsight` 0.37.0 (from 0.36.2): its CSV parsing holds each field
   once instead of twice (peak memory for profiling a 1,000,000-row, 6-column file
   falls about threefold), its low-variance count no longer depends on the data's
   unit, and `ProfileCsv` failures carry the engine's error code. It also adds
-  ACF/PACF and the ADF and KPSS tests, which DataLens does not call yet.
+  ACF/PACF and the ADF and KPSS tests, which `TimeSeriesAnalyzer` now exposes.
 - `DataLensEngine.Profile(path)` with default load options hands a plain
   comma-separated UTF-8 `.csv` to the engine (`ProfileCsvFile`), which reads the
   file itself: the file is no longer loaded into a frame and written back out as one

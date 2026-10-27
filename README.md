@@ -263,9 +263,9 @@ var options = new AnalysisOptions
 var analysis = await DataLensEngine.Analyze("timeseries.csv", options);
 ```
 
-### 10. Time-Series Period and Anomaly Scoring
+### 10. Time-Series Period, Anomaly Scoring, Autocorrelation and Stationarity
 
-Two primitives over an ordered series, called directly rather than through
+Four primitives over an ordered series, called directly rather than through
 `AnalysisOptions`: the order of the observations is the input, and a table has no
 notion of which column is time. Neither needs a trained model or a platform math
 library.
@@ -283,6 +283,13 @@ Console.WriteLine($"period: {period.Period?.ToString() ?? "none"}");      // 7
 SeriesAnomalyReport report = TimeSeriesAnalyzer.SpectralResidual(
     series, new SpectralResidualOptions { Threshold = 3.0 });
 Console.WriteLine($"anomalies: {string.Join(", ", report.Anomalies)}");  // 50
+
+SeriesAutocorrelation correlogram = TimeSeriesAnalyzer.Autocorrelation(series, maxLag: 14);
+Console.WriteLine($"acf at the period: {correlogram.Acf[7]:F2}");         // 0.49, past the 0.21 band
+
+SeriesStationarity tests = TimeSeriesAnalyzer.Stationarity(series);
+Console.WriteLine($"ADF rejects a unit root at 5%: {tests.Adf.Levels[1].Rejected}");
+Console.WriteLine($"KPSS rejects stationarity at 5%: {tests.Kpss.Levels[2].Rejected}");
 ```
 
 - `EstimatePeriod` — AutoPeriod (a permutation-thresholded periodogram peak
@@ -292,6 +299,18 @@ Console.WriteLine($"anomalies: {string.Join(", ", report.Anomalies)}");  // 50
   `Score`, an `Expected` value with a `Lower`/`Upper` band, and `IsAnomaly`.
   It assumes no period, so a seasonal series does not need one supplied. Options
   left unset take the paper's defaults. At least 12 observations.
+- `Autocorrelation` — the autocorrelation function (lags 0 to `maxLag`, with the
+  white-noise threshold and Bartlett's per-lag limits, to choose a moving-average
+  order) and the partial autocorrelation function (lags 1 to a largest lag below
+  half the sample, with its threshold, to choose an autoregressive order). The
+  default `maxLag` is the engine's `min(10·log10 n, n − 1)`. At least 4
+  observations; a series that does not vary is the engine's degenerate-data error.
+- `Stationarity` — the augmented Dickey-Fuller test (H0: a unit root; lags chosen
+  by AIC) and the KPSS test (H0: stationary), each with its critical values and
+  whether it rejects at each level, around a constant level or, with
+  `aroundTrend: true`, a linear trend. The two nulls are opposite on purpose: when
+  KPSS rejects and ADF does not, the usual next step is to difference once and test
+  again — a choice that stays with the caller. At least 10 observations.
 
 ## Output
 

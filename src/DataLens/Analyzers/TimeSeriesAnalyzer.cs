@@ -21,6 +21,12 @@ public static class TimeSeriesAnalyzer
     /// <summary>The fewest observations <see cref="SpectralResidual"/> accepts.</summary>
     public const int MinimumAnomalyPoints = 12;
 
+    /// <summary>The fewest observations <see cref="Autocorrelation"/> accepts.</summary>
+    public const int MinimumAutocorrelationPoints = 4;
+
+    /// <summary>The fewest observations <see cref="Stationarity"/> accepts.</summary>
+    public const int MinimumStationarityPoints = 10;
+
     /// <summary>
     /// The dominant period of <paramref name="series"/> (AutoPeriod: a permutation-thresholded
     /// periodogram peak confirmed on the autocorrelation function). Deterministic for a series.
@@ -98,6 +104,105 @@ public static class TimeSeriesAnalyzer
                 })
                 .ToList(),
             Anomalies = result.Anomalies.Select(i => checked((int)i)).ToList()
+        };
+    }
+
+    /// <summary>
+    /// The autocorrelation and partial autocorrelation functions of <paramref name="series"/>, with the
+    /// bands a correlogram draws (the white-noise threshold and Bartlett's limits) — the evidence for
+    /// choosing a moving-average order (autocorrelation) and an autoregressive order (partial
+    /// autocorrelation). Which model to fit, and with what order, stays the caller's choice.
+    /// </summary>
+    /// <param name="series">The ordered observations.</param>
+    /// <param name="maxLag">The largest lag, or <c>null</c> for the engine's default (the usual
+    /// <c>min(10·log10 n, n − 1)</c>). The partial autocorrelation stops below half the sample size,
+    /// so it is never asked for more than that.</param>
+    /// <exception cref="ArgumentException">Fewer than <see cref="MinimumAutocorrelationPoints"/> values,
+    /// a value that is not finite, or a <paramref name="maxLag"/> outside what the sample allows.</exception>
+    /// <exception cref="InsightException">The series does not vary (its autocorrelation is
+    /// undefined).</exception>
+    public static SeriesAutocorrelation Autocorrelation(IReadOnlyList<double> series, int? maxLag = null)
+    {
+        var data = Validate(series, MinimumAutocorrelationPoints, nameof(series));
+
+        using var client = new InsightClient();
+        UInsight.AcfResult acf;
+        UInsight.PacfResult pacf;
+        try
+        {
+            acf = client.Acf(data, maxLag);
+            pacf = client.Pacf(data, maxLag is { } k ? Math.Min(k, data.Length / 2 - 1) : null);
+        }
+        catch (InsightException e) when (e.Category == InsightErrorCategory.InvalidParameter && e.Parameter == "max_lag")
+        {
+            throw new ArgumentException($"{nameof(maxLag)}: {e.Message}", nameof(maxLag), e);
+        }
+
+        return new SeriesAutocorrelation
+        {
+            SampleSize = data.Length,
+            Acf = acf.Acf,
+            AcfThreshold = acf.ConfidenceThreshold,
+            AcfBartlettLimits = acf.BartlettLimits,
+            Pacf = pacf.Pacf,
+            PacfThreshold = pacf.ConfidenceThreshold
+        };
+    }
+
+    /// <summary>
+    /// Whether <paramref name="series"/> is stationary, by two tests with opposite nulls: the augmented
+    /// Dickey-Fuller test (H0: a unit root) and KPSS (H0: stationary). Neither rejecting, or both,
+    /// is a result in itself; how many differences to take is a policy and stays the caller's.
+    /// </summary>
+    /// <param name="series">The ordered observations.</param>
+    /// <param name="aroundTrend"><c>false</c> (the default) tests stationarity around a constant level;
+    /// <c>true</c> around a linear trend. The same choice is made for both tests.</param>
+    /// <exception cref="ArgumentException">Fewer than <see cref="MinimumStationarityPoints"/> values or a
+    /// value that is not finite.</exception>
+    /// <exception cref="InsightException">The series does not vary, or is so regular that a test's
+    /// statistic is undefined.</exception>
+    public static SeriesStationarity Stationarity(IReadOnlyList<double> series, bool aroundTrend = false)
+    {
+        var data = Validate(series, MinimumStationarityPoints, nameof(series));
+
+        using var client = new InsightClient();
+        var adf = client.AdfTest(data, aroundTrend ? AdfModel.ConstantTrend : AdfModel.Constant);
+        var kpss = client.KpssTest(data, aroundTrend ? KpssModel.Trend : KpssModel.Level);
+
+        return new SeriesStationarity
+        {
+            SampleSize = data.Length,
+            AroundTrend = aroundTrend,
+            Adf = new UnitRootTest
+            {
+                Statistic = adf.Statistic,
+                Lags = checked((int)adf.NLags),
+                Observations = checked((int)adf.NObs),
+                Levels = adf.Levels.Select(l => new TestLevel
+                {
+                    Level = l.Level,
+                    CriticalValue = l.CriticalValue,
+                    Rejected = l.Rejected
+                }).ToList()
+            },
+            Kpss = new StationarityTest
+            {
+                Statistic = kpss.Statistic,
+                Lags = checked((int)kpss.NLags),
+                PValue = kpss.PValue,
+                PValueBound = kpss.PValueBound switch
+                {
+                    KpssPValueBound.AtMost => "at-most",
+                    KpssPValueBound.AtLeast => "at-least",
+                    _ => "interpolated"
+                },
+                Levels = kpss.Levels.Select(l => new TestLevel
+                {
+                    Level = l.Level,
+                    CriticalValue = l.CriticalValue,
+                    Rejected = l.Rejected
+                }).ToList()
+            }
         };
     }
 
