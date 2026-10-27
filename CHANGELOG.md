@@ -8,6 +8,15 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Depends on `UInsight` 0.37.0 (from 0.36.2): its CSV parsing holds each field
+  once instead of twice (peak memory for profiling a 1,000,000-row, 6-column file
+  falls about threefold), its low-variance count no longer depends on the data's
+  unit, and `ProfileCsv` failures carry the engine's error code. It also adds
+  ACF/PACF, the ADF and KPSS tests and `ProfileCsvFile`, which DataLens does not
+  call yet.
+
 ## [0.20.0] - 2026-10-26
 
 ### Changed
