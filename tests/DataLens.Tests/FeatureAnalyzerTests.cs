@@ -33,6 +33,42 @@ public class FeatureAnalyzerTests
         return new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
     }
 
+    // The same columns in any unit flag the same low-variance features: a constant column and a
+    // column that barely moves relative to its size are low-variance whether they are in metres or nanometres.
+    private static DataAdapter BuildScaledAdapter(double scale, int n = 120)
+    {
+        var rng = new Random(11);
+        var data = new List<Dictionary<string, string>>(n);
+        for (int i = 0; i < n; i++)
+        {
+            var a = rng.NextDouble() * 50;
+            data.Add(new Dictionary<string, string>
+            {
+                ["Constant"] = (5.0 * scale).ToString("R"),
+                ["Pinned"] = ((1000.0 + (i % 3) * 1e-7) * scale).ToString("R"),
+                ["A"] = (a * scale).ToString("R"),
+                ["B"] = (rng.NextDouble() * 10 * scale).ToString("R"),
+                ["Y"] = (3 * a + rng.NextDouble()).ToString("R"),
+            });
+        }
+        return new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
+    }
+
+    [Theory]
+    [InlineData(1e-9)]
+    [InlineData(1e9)]
+    public async Task LowVarianceCount_DoesNotDependOnTheUnitOfTheData(double scale)
+    {
+        var options = new AnalysisOptions { TargetColumn = "Y" };
+
+        var inUnits = await new FeatureAnalyzer().AnalyzeAsync(BuildScaledAdapter(1.0), options);
+        var scaled = await new FeatureAnalyzer().AnalyzeAsync(BuildScaledAdapter(scale), options);
+
+        var flaggedInUnits = inUnits.Importance!.LowVarianceCount;
+        Assert.True(flaggedInUnits >= 2, $"the constant and the pinned column should be flagged, got {flaggedInUnits}");
+        Assert.Equal(flaggedInUnits, scaled.Importance!.LowVarianceCount);
+    }
+
     [Fact]
     public async Task NumericTarget_ExcludedFromMatrix_PermutationNotAllZero()
     {
