@@ -7,7 +7,7 @@ namespace DataLens.Tests;
 
 /// <summary>
 /// FeatureAnalyzer target-aware importance — 타깃 컬럼이 피처 행렬에서 제외되어야
-/// permutation importance가 self-prediction으로 0이 되지 않는다 (F-06).
+/// permutation importance가 self-prediction으로 0이 되지 않는다.
 /// </summary>
 public class FeatureAnalyzerTests
 {

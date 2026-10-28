@@ -7,7 +7,7 @@ namespace DataLens.Tests;
 /// <summary>
 /// DescriptiveAnalyzer 의 표본 왜도(g1)/첨도(g2) 분모는 n(n-1)(n-2)(n-3) 형태의 곱을 쓴다.
 /// 이 곱이 <c>int</c> 산술로 평가되면 n 이 클 때 정수 오버플로우가 발생해 통계량이 손상된다
-/// (관측: n≈50,000 에서 Kurtosis ≈ -356,422). KAMP SEQ020(전해탈지, 50K행) 라이브 EDA 도그푸딩에서 발견.
+/// (관측: n≈50,000 에서 Kurtosis ≈ -356,422). 5만 행 규모의 실데이터 EDA 에서 드러났다.
 /// </summary>
 public class DescriptiveAnalyzerOverflowTests
 {

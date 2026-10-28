@@ -121,7 +121,7 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                 {
                     // 타겟을 피처 행렬에서 제외한다. 제외하지 않으면 모델이 타겟으로 타겟을
                     // 예측(self-prediction)해 완벽 적합 → 실피처를 섞어도 점수 변화가 없어
-                    // 모든 실피처의 permutation importance가 0이 된다(F-06). 피처-전용 행렬은
+                    // 모든 실피처의 permutation importance가 0이 된다. 피처-전용 행렬은
                     // 전 행을 유지하므로(중앙값 대체) targetArray 행 정합은 기존과 동일하다.
                     var featureCols = numericCols.Where(c => c != targetCol).ToList();
                     if (featureCols.Count >= 1)
