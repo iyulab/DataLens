@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-29
+
 ### Added
 
 - `TimeSeriesAnalyzer.Autocorrelation` — the autocorrelation function (lags 0 to
@@ -23,6 +25,7 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- Depends on `FilePrepper` 0.13.1 (from 0.13.0), which moves to `Microsoft.Extensions.*` 10.0.14.
 - Depends on `UInsight` 0.38.0 (from 0.36.2; 0.38.0 adds an STL decomposition that
   `DataLens` does not expose): through 0.37.0 its CSV parsing holds each field
   once instead of twice (peak memory for profiling a 1,000,000-row, 6-column file
