@@ -8,6 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- The command-line tool builds on System.CommandLine 3.0.0-rc.3 (it was on preview 7), the
+  release-candidate line that leads to the stable 3.0.
+
 ## [0.21.0] - 2026-10-29
 
 ### Added

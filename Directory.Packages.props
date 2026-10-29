@@ -10,7 +10,7 @@
     <PackageVersion Include="UInsight" Version="0.38.0" />
 
     <!-- CLI dependencies -->
-    <PackageVersion Include="System.CommandLine" Version="3.0.0-preview.7.26381.103" />
+    <PackageVersion Include="System.CommandLine" Version="3.0.0-rc.3.26522.148" />
     <PackageVersion Include="Spectre.Console" Version="0.57.2" />
 
     <!-- Test dependencies -->
