@@ -73,24 +73,18 @@ jobs:
         if: steps.gate.outputs.should_publish == 'true'
         run: dotnet pack -c Release --no-build -o ./nupkg
 
-      # Trusted publishing: a short-lived key from the repository's OIDC token. The long-lived
-      # NUGET_API_KEY stays as the fallback until one release has gone through the login step.
+      # Trusted publishing: a short-lived key from the repository's OIDC token. A failed login fails the job.
       - name: NuGet login (trusted publishing)
         id: login
         if: steps.gate.outputs.should_publish == 'true'
-        continue-on-error: true
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
 
-      - name: Warn when falling back to the long-lived key
-        if: steps.gate.outputs.should_publish == 'true' && steps.login.outcome != 'success'
-        run: echo "::warning::NuGet trusted-publishing login failed; pushing with NUGET_API_KEY"
-
       - name: Push to NuGet
         if: steps.gate.outputs.should_publish == 'true'
         env:
-          NUGET_KEY: ${{ steps.login.outputs.NUGET_API_KEY || secrets.NUGET_API_KEY }}
+          NUGET_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
           for pkg in ./nupkg/*.nupkg; do
             dotnet nuget push "$pkg" \
