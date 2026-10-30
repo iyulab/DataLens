@@ -49,17 +49,29 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
             };
         });
 
-        var lofReport = TryRun("Lof", warnings, () =>
+        // LOF 는 행 수에 O(n²) — 임계를 넘으면 건너뛰고 알린다 (앙상블은 나머지 둘로 판정).
+        LofReport? lofReport = null;
+        if (options.LofRowThreshold != 0 && (uint)nRows > options.LofRowThreshold)
         {
-            var lofResult = client.Lof(matrix);
-            return new LofReport
+            warnings?.Add(new AnalysisWarning(
+                Analyzer: "Lof",
+                Category: WarningCategory.SkippedForSize,
+                Message: $"행 수 {nRows} 가 LofRowThreshold({options.LofRowThreshold}) 를 넘어 LOF 를 건너뜀 (행 수에 O(n²)). 앙상블 이상치는 IsolationForest·Mahalanobis 로 판정. LofRowThreshold = 0 이면 항상 실행."));
+        }
+        else
+        {
+            lofReport = TryRun("Lof", warnings, () =>
             {
-                Scores = lofResult.Scores,
-                Anomalies = lofResult.Anomalies.Select(b => b != 0).ToArray(),
-                AnomalyCount = lofResult.AnomalyCount,
-                Threshold = lofResult.Threshold
-            };
-        });
+                var lofResult = client.Lof(matrix);
+                return new LofReport
+                {
+                    Scores = lofResult.Scores,
+                    Anomalies = lofResult.Anomalies.Select(b => b != 0).ToArray(),
+                    AnomalyCount = lofResult.AnomalyCount,
+                    Threshold = lofResult.Threshold
+                };
+            });
+        }
 
         var mahReport = TryRun("Mahalanobis", warnings, () =>
         {
@@ -73,7 +85,7 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
             };
         });
 
-        // 앙상블 이상치 카운트 (2/3 이상이 이상치로 판정한 경우)
+        // 앙상블 이상치 카운트 (2/3 이상이 이상치로 판정한 경우; LOF 가 없으면 나머지 둘이 모두 이상치로 판정한 경우)
         int outlierCount = 0;
         for (int i = 0; i < nRows; i++)
         {

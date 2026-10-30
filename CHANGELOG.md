@@ -10,6 +10,12 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- **Local outlier factor and change-point detection are skipped above 20,000 rows, and the report says so.** Both are quadratic in the rows -
+  with four numeric columns LOF takes 5 s at 20,000 rows and 32 s at 50,000, PELT 1.4 s and 10 s - and both ran by default, so an analysis of
+  a large file took minutes to hours for results the caller often never read. `AnalysisOptions.LofRowThreshold` and `ChangepointRowThreshold`
+  (default 20,000, like `SilhouetteRowThreshold`) set the row count above which each is skipped; `0` keeps the unconditional run. A skipped analysis
+  adds an `AnalysisWarning` of the new category `WarningCategory.SkippedForSize`, `OutlierReport.Lof` is `null`, and the ensemble outlier count then
+  needs the other two algorithms to agree. Callers that want either on a large frame set its threshold to `0`.
 - The command-line tool builds on System.CommandLine 3.0.0-rc.3 (it was on preview 7), the
   release-candidate line that leads to the stable 3.0.
 

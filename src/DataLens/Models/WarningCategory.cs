@@ -46,6 +46,9 @@ public enum WarningCategory
     /// <summary>POCO/Dictionary → DataFrame 변환에서 지원하지 않는 타입 — ToString 으로 fallback.</summary>
     TypeMappingFailed,
 
+    /// <summary>행 수가 비용 보호 임계(<c>LofRowThreshold</c> · <c>ChangepointRowThreshold</c>)를 넘어 행 수에 이차인 분석을 건너뜀. 임계를 0 으로 두면 항상 실행.</summary>
+    SkippedForSize,
+
     /// <summary>그 외 일반 예외 (UInsight 외부 원인). 디버깅 단서로만 사용.</summary>
     ComputationFailed,
 }

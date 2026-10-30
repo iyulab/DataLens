@@ -76,6 +76,21 @@ public class AnalysisOptions
     public uint SilhouetteRowThreshold { get; set; } = 50_000;
 
     /// <summary>
+    /// LOF(Local Outlier Factor)를 자동 skip 하는 행 수 임계값. LOF 는 행 수에 O(n²) — 숫자 4 컬럼에서 20,000 행 5 초, 50,000 행 32 초.
+    /// 행 수가 이 값을 초과하면 <see cref="IncludeOutliers"/> 가 true 여도 LOF 는 건너뛰고 <see cref="Models.OutlierReport.Lof"/> 가 null,
+    /// 앙상블은 나머지 알고리즘만으로 판정하며 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다.
+    /// 0 이면 임계 없음 (항상 산출). O(n²) 비용 보호용.
+    /// </summary>
+    public uint LofRowThreshold { get; set; } = 20_000;
+
+    /// <summary>
+    /// 변화점 탐지(PELT)를 자동 skip 하는 행 수 임계값. 변화점이 드문 데이터에서 PELT 는 가지치기가 듣지 않아 행 수에 O(n²) —
+    /// 숫자 4 컬럼에서 20,000 행 1.4 초, 50,000 행 10 초. 행 수가 이 값을 초과하면 <see cref="IncludeChangepoints"/> 가 true 여도
+    /// 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다. 0 이면 임계 없음.
+    /// </summary>
+    public uint ChangepointRowThreshold { get; set; } = 20_000;
+
+    /// <summary>
     /// HDBSCAN 최소 클러스터 크기.
     /// </summary>
     public uint HdbscanMinClusterSize { get; set; } = 5;

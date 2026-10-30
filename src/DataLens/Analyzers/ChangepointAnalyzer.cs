@@ -15,6 +15,16 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
         if (numericColumns.Count == 0)
             return Task.FromResult(new ChangepointReport());
 
+        // PELT 는 변화점이 드문 데이터에서 가지치기가 듣지 않아 행 수에 O(n²) — 임계를 넘으면 건너뛰고 알린다.
+        if (options.ChangepointRowThreshold != 0 && (uint)adapter.RowCount > options.ChangepointRowThreshold)
+        {
+            warnings?.Add(new AnalysisWarning(
+                Analyzer: "Changepoints",
+                Category: WarningCategory.SkippedForSize,
+                Message: $"행 수 {adapter.RowCount} 가 ChangepointRowThreshold({options.ChangepointRowThreshold}) 를 넘어 변화점 탐지를 건너뜀 (행 수에 O(n²)). ChangepointRowThreshold = 0 이면 항상 실행."));
+            return Task.FromResult(new ChangepointReport());
+        }
+
         // PELT는 시계열 데이터에 적용 → 각 숫자 컬럼을 독립적으로 분석
         // 결측값은 제거한 clean array 사용 (PELT는 연속 데이터 필요)
         using var client = new InsightClient();
