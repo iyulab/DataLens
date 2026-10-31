@@ -43,6 +43,7 @@ public class FileProfilerTests : IDisposable
         { "no-final-newline.csv", "a,b\n1,2\n3,4" },
         { "quoted-newline.csv", "a,b\n1,\"line one\nline two\"\n2,plain\n" },
         { "single-column.csv", "only\n1\n2\n3\n" },
+        { "blank-lines-after-the-rows.csv", "a,b\n1,2\n3,4\n5,6\n\n\n" },
         { "all-missing-column.csv", "a,b\n1,\n2,\n3,\n" },
     };
 
@@ -54,6 +55,24 @@ public class FileProfilerTests : IDisposable
 
         Assert.NotNull(FileProfiler.TryProfile(path));
         Assert.Equal(await ViaLoader(path), await ViaDefault(path));
+    }
+
+    [Theory]
+    [InlineData("between.csv", "a,b\n1,2\n\n3,4\n5,6\n")]
+    [InlineData("between-crlf.csv", "a,b\r\n1,2\r\n\r\n3,4\r\n5,6\r\n")]
+    [InlineData("between-one-column.csv", "a\n1\n\n3\n5\n")]
+    public async Task ABlankLineBetweenRows_GoesTheLoaderRoute_AndIsNotARow(string name, string text)
+    {
+        // In a file of one column the engine counted every empty line as a row of missing values (59 rows for a file of 60
+        // lines with six empty), where the loader skips them (54): the profile of a file must not depend on the route it took.
+        // A wider file with an empty line between rows is refused by the engine already, and is held here so it stays so.
+        var path = Write(name, text);
+
+        Assert.Null(FileProfiler.TryProfile(path));
+        var report = await DataLensEngine.Profile(path);
+        Assert.Equal(await ViaLoader(path), JsonSerializer.Serialize(report));
+        Assert.Equal(3, report.RowCount);
+        Assert.All(report.Columns, c => Assert.Equal(0, c.NullCount));
     }
 
     [Fact]

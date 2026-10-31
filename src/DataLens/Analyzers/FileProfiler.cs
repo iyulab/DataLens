@@ -26,7 +26,7 @@ internal static class FileProfiler
         try
         {
             var header = ReadPlainHeader(filePath);
-            if (header is null || !IsUtf8(filePath))
+            if (header is null || !IsUtf8(filePath) || HasBlankLineBeforeTheLastRow(filePath))
                 return null;
 
             using var client = new InsightClient();
@@ -70,6 +70,38 @@ internal static class FileProfiler
             return null;
 
         return names;
+    }
+
+    /// <summary>Whether an empty line is followed by more rows. The loader skips an empty line and the engine counts one in
+    /// the middle of the rows as a row of missing values, so such a file goes the loader's way and both routes give the same
+    /// report; empty lines after the last row are skipped by both.</summary>
+    private static bool HasBlankLineBeforeTheLastRow(string filePath)
+    {
+        var buffer = new byte[1 << 16];
+        var afterLineEnd = false;
+        var sawBlank = false;
+        using var stream = File.OpenRead(filePath);
+        int read;
+        while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            for (var i = 0; i < read; i++)
+            {
+                var b = buffer[i];
+                if (b == (byte)'\n')
+                {
+                    sawBlank |= afterLineEnd;
+                    afterLineEnd = true;
+                }
+                else if (b != (byte)'\r')
+                {
+                    if (sawBlank)
+                        return true;
+                    afterLineEnd = false;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Whether the whole file is valid UTF-8 — the engine reads bytes as UTF-8, while the

@@ -8,6 +8,13 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A file of one column with an empty line between its rows is profiled the same on both routes.** The engine, reading the file itself, counted each
+  empty line as a row of missing values (59 rows and a column "10% missing" for a file of 60 lines of which six were empty), while the loader skips them
+  (54 rows, none missing). A file with an empty line before its last row now goes the loader's way; empty lines after the last row were already read
+  the same by both and still go by path.
+
 ### Changed
 
 - **Local outlier factor and change-point detection are skipped above 20,000 rows, and the report says so.** Both are quadratic in the rows -
