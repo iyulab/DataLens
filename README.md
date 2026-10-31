@@ -226,7 +226,20 @@ if (outliers.IsolationForest is { } iso)
 }
 ```
 
-### 7. Feature Importance
+### 7. Distribution Analysis
+
+Per numeric column: four normality tests (Kolmogorov-Smirnov, Jarque-Bera, Shapiro-Wilk, Anderson-Darling), skewness and excess kurtosis, and a
+shape label (`NormalLike`, `RightSkewed`, `LeftSkewed`, ...).
+
+```csharp
+var distribution = analysis.Distribution!;
+foreach (var col in distribution.Columns)
+{
+    Console.WriteLine($"{col.Name}: {col.Shape}, skew={col.Skewness:F2}, kurtosis={col.Kurtosis:F2}, normal={col.IsNormal}");
+}
+```
+
+### 8. Feature Importance
 
 ANOVA F-test, mutual information, and permutation importance against a target column.
 
@@ -238,7 +251,9 @@ foreach (var feat in report.Importance!.Scores)
 }
 ```
 
-### 8. Dimensionality Reduction (PCA)
+In a full analysis the same report is `analysis.Features`, switched on by `IncludeFeatures` together with `TargetColumn`.
+
+### 9. Dimensionality Reduction (PCA)
 
 ```csharp
 var pca = analysis.Pca!;
@@ -249,7 +264,7 @@ for (int i = 0; i < pca.ExplainedVariance.Length; i++)
 }
 ```
 
-### 9. Changepoint Detection
+### 10. Changepoint Detection
 
 PELT-based changepoint detection (multivariate, configurable cost function).
 
@@ -263,7 +278,7 @@ var options = new AnalysisOptions
 var analysis = await DataLensEngine.Analyze("timeseries.csv", options);
 ```
 
-### 10. Time-Series Period, Anomaly Scoring, Autocorrelation and Stationarity
+### 11. Time-Series Period, Anomaly Scoring, Autocorrelation and Stationarity
 
 Four primitives over an ordered series, called directly rather than through
 `AnalysisOptions`: the order of the observations is the input, and a table has no
