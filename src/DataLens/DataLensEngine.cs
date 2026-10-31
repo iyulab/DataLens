@@ -78,7 +78,7 @@ public static class DataLensEngine
 
     /// <summary>
     /// 동기 분석 entry point. CLI / 배치 / 콘솔 등 thread pool 오버헤드가 불필요한 호출자용.
-    /// async 오버로드는 내부적으로 이 메서드를 <see cref="Task.Run(Func{TResult})"/> wrap 한다.
+    /// async 오버로드는 내부적으로 이 메서드를 <see cref="Task.Run{TResult}(Func{TResult})"/> wrap 한다.
     /// </summary>
     public static AnalysisResult AnalyzeSync(
         DataFrame dataFrame,

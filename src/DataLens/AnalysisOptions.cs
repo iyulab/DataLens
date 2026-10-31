@@ -121,7 +121,7 @@ public class AnalysisOptions
     /// null/empty 면 모든 컬럼이 분석 대상. 지정 시 이 목록 외 컬럼은 numeric/categorical 분류에서 제외된다.
     /// </summary>
     /// <remarks>
-    /// <see cref="EnumerableSourceOptions{T}.IncludeProperties"/> 와 의미가 다르다 — 후자는 DataFrame
+    /// <c>EnumerableSourceOptions&lt;T&gt;.IncludeProperties</c> 와 의미가 다르다 — 후자는 DataFrame
     /// 으로 적재할 *POCO 속성* 을 제한, 전자는 분석에 사용할 *DataFrame 컬럼* 을 제한한다.
     /// CSV/JSON 파일 입력에서도 일관 동작한다.
     /// </remarks>

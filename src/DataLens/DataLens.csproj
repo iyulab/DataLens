@@ -5,6 +5,10 @@
     <Description>Exploratory data analysis engine for CSV/Excel datasets. Produces JSON analysis results including profiling, descriptive statistics, correlation, regression, clustering, outlier detection, PCA, and feature importance.</Description>
     <PackageTags>eda;data-analysis;statistics;csv;profiling;correlation;clustering</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Ship the XML documentation. A public member without a summary is not an error (CS1591 stays off); the
+         malformed comments that the build reports are. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

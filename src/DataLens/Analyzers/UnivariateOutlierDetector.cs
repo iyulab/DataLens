@@ -153,7 +153,7 @@ public static class UnivariateOutlierDetector
     private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
 
     /// <summary>
-    /// 정렬된 배열에서 quantile 계산 (linear interpolation — Hyndman & Fan type 7, numpy's default).
+    /// 정렬된 배열에서 quantile 계산 (linear interpolation — Hyndman &amp; Fan type 7, numpy's default).
     /// </summary>
     private static double Quantile(double[] sorted, double q)
     {
