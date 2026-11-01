@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-11-02
+
 ### Fixed
 
 - **A header written as letters (NFD) is named in the whole form on both routes.** A Korean syllable written whole and the same syllable written as its letters — the form macOS gives many files — are one text. The loader (FilePrepper 0.13.2) puts a header in the whole form; the path route handed the file to the engine, which reports the bytes it reads, so one file's column was named in letters by the path route and in syllables by the loader. A header that is not in its whole form now goes the loader's way.
