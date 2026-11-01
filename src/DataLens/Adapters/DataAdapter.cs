@@ -134,7 +134,7 @@ public class DataAdapter
         var values = _dataFrame.GetColumn(column).ToList();
         var uniqueValues = values.Where(v => !string.IsNullOrWhiteSpace(v))
                                   .Distinct()
-                                  .OrderBy(v => v)
+                                  .OrderBy(v => v, StringComparer.Ordinal)
                                   .ToList();
         var labelMap = new Dictionary<string, uint>();
         for (int i = 0; i < uniqueValues.Count; i++)

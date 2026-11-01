@@ -264,8 +264,8 @@ public class CorrelationAnalyzer : IAnalyzer<CorrelationReport>
 
         if (vals1.Count == 0) return null;
 
-        var unique1 = vals1.Distinct().OrderBy(v => v).ToList();
-        var unique2 = vals2.Distinct().OrderBy(v => v).ToList();
+        var unique1 = vals1.Distinct().OrderBy(v => v, StringComparer.Ordinal).ToList();
+        var unique2 = vals2.Distinct().OrderBy(v => v, StringComparer.Ordinal).ToList();
 
         if (unique1.Count < 2 || unique2.Count < 2) return null;
 

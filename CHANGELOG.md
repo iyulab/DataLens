@@ -10,6 +10,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Fixed
 
+- **Label indices and the values of a categorical pair are ordered ordinally, not by the machine's culture.** `ToLabels` numbered a column's distinct values in the current culture's sort order and the categorical-association analysis ordered a pair's values the same way, so the same file gave different label indices on a machine whose culture sorts `a` and `B` differently. Both sort ordinally now.
+
 - **A file of one column with an empty line between its rows is profiled the same on both routes.** The engine, reading the file itself, counted each
   empty line as a row of missing values (59 rows and a column "10% missing" for a file of 60 lines of which six were empty), while the loader skips them
   (54 rows, none missing). A file with an empty line before its last row now goes the loader's way; empty lines after the last row were already read
