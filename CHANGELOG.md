@@ -10,6 +10,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Fixed
 
+- **A header written as letters (NFD) is named in the whole form on both routes.** A Korean syllable written whole and the same syllable written as its letters — the form macOS gives many files — are one text. The loader (FilePrepper 0.13.2) puts a header in the whole form; the path route handed the file to the engine, which reports the bytes it reads, so one file's column was named in letters by the path route and in syllables by the loader. A header that is not in its whole form now goes the loader's way.
+
 - **Label indices and the values of a categorical pair are ordered ordinally, not by the machine's culture.** `ToLabels` numbered a column's distinct values in the current culture's sort order and the categorical-association analysis ordered a pair's values the same way, so the same file gave different label indices on a machine whose culture sorts `a` and `B` differently. Both sort ordinally now.
 
 - **A file of one column with an empty line between its rows is profiled the same on both routes.** The engine, reading the file itself, counted each

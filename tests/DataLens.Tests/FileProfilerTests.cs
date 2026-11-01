@@ -124,6 +124,32 @@ public class FileProfilerTests : IDisposable
     }
 
     [Fact]
+    public async Task AHeaderWrittenAsLetters_IsReadAsSyllablesOnEveryRoute()
+    {
+        // A Korean syllable written whole and written as its letters (the form macOS gives many files) are one text. The loader
+        // puts a header in the whole form; the engine reads the bytes it is handed, so the path route named the column in letters
+        // and the two routes reported different names for one file.
+        var syllables = "도시";
+        var letters = syllables.Normalize(NormalizationForm.FormD);
+        var path = Write("letters.csv", $"{letters},n\nA,1\nB,2\n");
+
+        Assert.Null(FileProfiler.TryProfile(path));
+        var report = await DataLensEngine.Profile(path);
+
+        Assert.Equal(syllables, report.Columns[0].Name);
+        Assert.Equal(await ViaLoader(path), await ViaDefault(path));
+    }
+
+    [Fact]
+    public async Task AHeaderAlreadyInTheWholeForm_StillGoesByPath()
+    {
+        var path = Write("syllables.csv", "도시,n\nA,1\nB,2\n");
+
+        Assert.NotNull(FileProfiler.TryProfile(path));
+        Assert.Equal("도시", (await DataLensEngine.Profile(path)).Columns[0].Name);
+    }
+
+    [Fact]
     public void OtherExtension_IsNotProfiledByPath()
     {
         Assert.Null(FileProfiler.TryProfile(Write("data.tsv", "a,b\n1,2\n")));

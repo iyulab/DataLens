@@ -47,7 +47,7 @@ internal static class FileProfiler
     }
 
     /// <summary>The header's column names, or <c>null</c> when it is not a plain comma-separated line
-    /// (byte-order mark, quotes, another delimiter, blank or padded or repeated names).</summary>
+    /// (byte-order mark, quotes, another delimiter, blank or padded or repeated names, text not in its whole form).</summary>
     private static List<string>? ReadPlainHeader(string filePath)
     {
         using var stream = File.OpenRead(filePath);
@@ -63,6 +63,11 @@ internal static class FileProfiler
 
         var line = Encoding.UTF8.GetString(buffer, 0, end).TrimEnd('\r');
         if (line.Length == 0 || line.IndexOfAny(OtherDelimiters) >= 0)
+            return null;
+
+        // The loader names a column in the whole form of a Korean syllable (NFC) however the file wrote it; the engine reads the bytes
+        // it is given. A header written as letters (NFD) goes the loader's way, so both routes name the column alike.
+        if (!line.IsNormalized(NormalizationForm.FormC))
             return null;
 
         var names = line.Split(',').ToList();
