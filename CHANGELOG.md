@@ -19,6 +19,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- **FilePrepper 0.13.2.** A file whose header names a column twice, and an empty file, are refused by the loader (an `InvalidDataException` naming the repeated columns) instead of being read with one of the columns gone; cells and column names are read in NFC, so a table written as Korean letters (NFD) profiles as the same text as the table written as syllables; a cell is a number only if it is a plain finite number (`1,200`, `NaN`, `Infinity` are not), and a date keeps the clock it was written with.
+
 - **Local outlier factor and change-point detection are skipped above 20,000 rows, and the report says so.** Both are quadratic in the rows -
   with four numeric columns LOF takes 5 s at 20,000 rows and 32 s at 50,000, PELT 1.4 s and 10 s - and both ran by default, so an analysis of
   a large file took minutes to hours for results the caller often never read. `AnalysisOptions.LofRowThreshold` and `ChangepointRowThreshold`

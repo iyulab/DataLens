@@ -94,7 +94,6 @@ public class FileProfilerTests : IDisposable
         { "semicolon.csv", "a;b\n1;2\n3;4\n"u8.ToArray() },
         { "tab-separated.csv", "a\tb\n1\t2\n"u8.ToArray() },
         { "quoted-header.csv", "\"a\",\"b\"\n1,2\n"u8.ToArray() },
-        { "repeated-name.csv", "a,a\n1,2\n"u8.ToArray() },
         { "padded-name.csv", "a, b\n1,2\n"u8.ToArray() },
         { "blank-name.csv", "a,,c\n1,2,3\n"u8.ToArray() },
         { "not-utf8.csv", [.. "name,v\n"u8.ToArray(), 0xB0, 0xA1, .. ",1\n"u8.ToArray()] },
@@ -109,6 +108,19 @@ public class FileProfilerTests : IDisposable
 
         Assert.Null(FileProfiler.TryProfile(path));
         Assert.Equal(await ViaLoader(path), await ViaDefault(path));
+    }
+
+    [Fact]
+    public async Task ARepeatedColumnName_IsLeftToTheLoader_WhichRefusesIt_OnBothRoutes()
+    {
+        // The loader held a row by column name, so two columns of one name kept only the last one's values and every result looked
+        // like a table that was not the one in the file. It refuses such a file now, and a file the engine does not read itself
+        // gets the refusal from the default route as from the loader's.
+        var path = WriteBytes("repeated-name.csv", "a,a\n1,2\n"u8.ToArray());
+
+        Assert.Null(FileProfiler.TryProfile(path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ViaLoader(path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ViaDefault(path));
     }
 
     [Fact]
