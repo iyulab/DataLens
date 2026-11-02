@@ -84,9 +84,10 @@ public class AnalysisOptions
     public uint LofRowThreshold { get; set; } = 100_000;
 
     /// <summary>
-    /// 변화점 탐지(PELT)를 자동 skip 하는 행 수 임계값. 변화점이 드문 데이터에서 PELT 는 가지치기가 듣지 않아 행 수에 O(n²) —
-    /// 숫자 4 컬럼에서 20,000 행 1.4 초, 50,000 행 10 초. 행 수가 이 값을 초과하면 <see cref="IncludeChangepoints"/> 가 true 여도
-    /// 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다. 0 이면 임계 없음.
+    /// 행 수에 이차인 변화점 탐지(PELT)를 자동 skip 하는 행 수 임계값 — 다변량(모든 숫자 컬럼 동시) 탐지와 <see cref="ChangepointCost.Normal"/>
+    /// 비용의 컬럼별 탐지에 걸린다. 변화점이 드문 데이터에서 그 둘은 가지치기가 듣지 않아 O(n²)이다(숫자 4 컬럼 50,000 행 17 초).
+    /// <see cref="ChangepointCost.L2"/> 비용의 컬럼별 탐지는 평균 함수형 가지치기로 근-선형이라(UAnalytics 0.27 — 50,000 행 0.1 초) 임계 없이 언제나 돈다.
+    /// 행 수가 이 값을 초과하면 해당 탐지를 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다. 0 이면 임계 없음.
     /// </summary>
     public uint ChangepointRowThreshold { get; set; } = 20_000;
 

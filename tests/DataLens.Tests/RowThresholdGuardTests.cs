@@ -75,17 +75,33 @@ public class RowThresholdGuardTests
     }
 
     [Fact]
-    public async Task Changepoints_AreSkippedAboveTheThreshold_AndTheReportSaysSo()
+    public async Task AboveTheThreshold_L2ColumnsStillRun_AndTheMultivariateRunIsSkipped()
     {
         var warnings = new List<AnalysisWarning>();
 
         var report = await new ChangepointAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { ChangepointRowThreshold = 200 }, warnings);
 
-        Assert.Empty(report.Columns);
+        // Per-column L2 PELT is near-linear: no threshold.
+        Assert.NotEmpty(report.Columns);
+        Assert.Null(report.Multivariate);
         var skipped = Assert.Single(warnings, w => w.Category == WarningCategory.SkippedForSize);
         Assert.Equal("Changepoints", skipped.Analyzer);
         Assert.Contains("ChangepointRowThreshold", skipped.Message);
     }
+
+    [Fact]
+    public async Task AboveTheThreshold_TheNormalCostSkipsBothRuns_AndSaysSo()
+    {
+        var warnings = new List<AnalysisWarning>();
+
+        var report = await new ChangepointAnalyzer().AnalyzeAsync(
+            Adapter(300), new AnalysisOptions { ChangepointRowThreshold = 200, ChangepointCost = ChangepointCost.Normal }, warnings);
+
+        Assert.Empty(report.Columns);
+        Assert.Null(report.Multivariate);
+        Assert.Equal(2, warnings.Count(w => w.Category == WarningCategory.SkippedForSize && w.Analyzer == "Changepoints"));
+    }
+
 
     [Theory]
     [InlineData(300u)]

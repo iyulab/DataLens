@@ -1,5 +1,5 @@
 using DataLens.Analyzers;
-using UInsight;
+using UAnalytics;
 
 namespace DataLens.Tests;
 
@@ -90,7 +90,7 @@ public class SeriesStatisticsTests
         var ex = Assert.Throws<ArgumentException>(() => TimeSeriesAnalyzer.Autocorrelation(Ar1(100, 0.5, 2), maxLag: 200));
 
         Assert.Equal("maxLag", ex.ParamName);
-        Assert.IsType<InsightException>(ex.InnerException);
+        Assert.IsType<AnalyticsException>(ex.InnerException);
     }
 
     [Fact]
@@ -103,9 +103,9 @@ public class SeriesStatisticsTests
     [Fact]
     public void Autocorrelation_of_a_constant_series_is_the_engines_degenerate_error()
     {
-        var ex = Assert.Throws<InsightException>(() => TimeSeriesAnalyzer.Autocorrelation(Enumerable.Repeat(3.0, 30).ToArray()));
+        var ex = Assert.Throws<AnalyticsException>(() => TimeSeriesAnalyzer.Autocorrelation(Enumerable.Repeat(3.0, 30).ToArray()));
 
-        Assert.Equal(InsightErrorCategory.DegenerateData, ex.Category);
+        Assert.Equal("degenerate_data", ex.ErrorCode);
     }
 
     [Fact]
@@ -152,8 +152,8 @@ public class SeriesStatisticsTests
     public void Stationarity_of_too_short_input_is_an_argument_error_and_of_a_constant_series_the_engines()
     {
         Assert.Throws<ArgumentException>(() => TimeSeriesAnalyzer.Stationarity(WhiteNoise(9, 1)));
-        var ex = Assert.Throws<InsightException>(() => TimeSeriesAnalyzer.Stationarity(Enumerable.Repeat(1.0, 50).ToArray()));
-        Assert.Equal(InsightErrorCategory.DegenerateData, ex.Category);
+        var ex = Assert.Throws<AnalyticsException>(() => TimeSeriesAnalyzer.Stationarity(Enumerable.Repeat(1.0, 50).ToArray()));
+        Assert.Equal("degenerate_data", ex.ErrorCode);
     }
 
     /// <summary>The README's example: a sawtooth of period 7 with one spike.</summary>

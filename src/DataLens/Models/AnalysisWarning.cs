@@ -1,3 +1,4 @@
+using UAnalytics;
 using UInsight;
 
 namespace DataLens.Models;
@@ -10,12 +11,14 @@ namespace DataLens.Models;
 /// <param name="Message">사람이 읽을 수 있는 설명. 가능 시 affected column / row 정보를 본문에 포함.</param>
 /// <param name="AffectedColumns">사유에 직접 관련된 컬럼 이름들. UI 가 강조 표시하거나 사용자가 제외 결정에 활용.</param>
 /// <param name="UpstreamCategory">UInsight 등 외부 origin 의 카테고리 (있는 경우). <see cref="WarningCategory.UpstreamError"/> / <see cref="WarningCategory.SingularCovariance"/> 와 함께 사용.</param>
+/// <param name="UpstreamCode">통계 엔진(UInsight · UAnalytics)이 거절에 붙인 안정된 이유 <c>code</c>(예: <c>degenerate_data</c>) — 있는 경우.</param>
 public record AnalysisWarning(
     string Analyzer,
     WarningCategory Category,
     string Message,
     IReadOnlyList<string>? AffectedColumns = null,
-    InsightErrorCategory? UpstreamCategory = null
+    InsightErrorCategory? UpstreamCategory = null,
+    string? UpstreamCode = null
 )
 {
     /// <summary>
@@ -40,8 +43,23 @@ public record AnalysisWarning(
             Category: category,
             Message: ex.Message,
             AffectedColumns: affectedColumns,
-            UpstreamCategory: ex.Category);
+            UpstreamCategory: ex.Category,
+            UpstreamCode: ex.ErrorCode);
     }
+
+    /// <summary>
+    /// <see cref="AnalyticsException"/>(시계열 · 변화점 엔진의 거절)을 <see cref="AnalysisWarning"/> 으로 변환한다 —
+    /// <see cref="WarningCategory.UpstreamError"/>, 엔진의 <c>code</c> 는 <see cref="UpstreamCode"/> 에.
+    /// </summary>
+    public static AnalysisWarning FromAnalyticsException(
+        string analyzer,
+        AnalyticsException ex,
+        IReadOnlyList<string>? affectedColumns = null) => new(
+            Analyzer: analyzer,
+            Category: WarningCategory.UpstreamError,
+            Message: ex.Message,
+            AffectedColumns: affectedColumns,
+            UpstreamCode: ex.ErrorCode);
 
     /// <summary>
     /// 분석기가 한 단계를 건너뛸 때 그 실패를 경고로 남긴다. <see cref="InsightException"/> 은
@@ -54,6 +72,7 @@ public record AnalysisWarning(
         IReadOnlyList<string>? affectedColumns = null) => ex switch
         {
             InsightException ie => FromInsightException(analyzer, ie, affectedColumns),
+            AnalyticsException ae => FromAnalyticsException(analyzer, ae, affectedColumns),
             _ => new AnalysisWarning(
                 Analyzer: analyzer,
                 Category: WarningCategory.ComputationFailed,

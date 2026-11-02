@@ -8,6 +8,19 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Change points, the dominant period, spectral-residual anomaly scores, the autocorrelation functions and the
+  stationarity tests now come from UAnalytics 0.27.0 (a new dependency), the package that owns these single-series
+  algorithms. UInsight 0.40.0 no longer exposes them. The results are the same. `TimeSeriesAnalyzer`'s engine errors
+  are now `UAnalytics.AnalyticsException` (its `ErrorCode` is the engine's reason, e.g. `degenerate_data`)
+  instead of `UInsight.InsightException`. `AnalysisWarning` gains `UpstreamCode`, the engine's reason for either
+  engine.
+- `ChangepointRowThreshold` (20,000 rows) now skips only the detections that stay quadratic in the rows on a series
+  without changes: the multivariate run, and the per-column runs with `ChangepointCost.Normal`. Per-column L2 PELT
+  always runs, because UAnalytics 0.27 prunes it by the segment mean (50,000 rows in about 0.1 s, the same change
+  points).
+
 ## [0.22.0] - 2026-11-02
 
 ### Changed

@@ -2,6 +2,7 @@ using DataLens.Adapters;
 using DataLens.Analyzers;
 using DataLens.Models;
 using FilePrepper.Pipeline;
+using UAnalytics;
 using UInsight;
 
 namespace DataLens;
@@ -224,6 +225,11 @@ public static class DataLensEngine
         catch (InsightException ex)
         {
             warnings.Add(AnalysisWarning.FromInsightException(analyzerName, ex));
+            return null;
+        }
+        catch (AnalyticsException ex)
+        {
+            warnings.Add(AnalysisWarning.FromAnalyticsException(analyzerName, ex));
             return null;
         }
         catch (Exception ex)

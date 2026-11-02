@@ -1,5 +1,5 @@
 using DataLens.Models;
-using UInsight;
+using UAnalytics;
 
 namespace DataLens.Analyzers;
 
@@ -37,21 +37,21 @@ public static class TimeSeriesAnalyzer
     {
         var data = Validate(series, MinimumPeriodPoints, nameof(series));
 
-        using var client = new InsightClient();
+        using var client = new AnalyticsClient();
         var estimate = client.EstimatePeriod(data);
 
         return new SeriesPeriod
         {
-            Period = estimate.Period is { } p ? checked((int)p) : null,
+            Period = estimate.Period,
             Candidates = estimate.Candidates
                 .Select(c => new SeriesPeriodCandidate
                 {
-                    Period = checked((int)c.Period),
+                    Period = c.Period,
                     Acf = c.Acf,
                     PowerShare = c.PowerShare
                 })
                 .ToList(),
-            SampleSize = checked((int)estimate.N),
+            SampleSize = estimate.N,
             AcfThreshold = estimate.AcfThreshold
         };
     }
@@ -69,22 +69,27 @@ public static class TimeSeriesAnalyzer
     {
         var data = Validate(series, MinimumAnomalyPoints, nameof(series));
 
-        using var client = new InsightClient();
-        UInsight.SpectralResidualResult result;
+        using var client = new AnalyticsClient();
+        UAnalytics.SpectralResidualResult result;
         try
         {
-            result = client.SpectralResidual(data, ToEngine(options));
+            // An option left null keeps the engine's own default (the paper's values), and the
+            // engine checks every option's range.
+            result = client.SpectralResidual(
+                data,
+                averagingWindow: options?.AveragingWindow,
+                judgementWindow: options?.JudgementWindow,
+                threshold: options?.Threshold,
+                minZscore: options?.MinZscore,
+                sensitivity: options?.Sensitivity,
+                batchSize: options?.BatchSize);
         }
-        catch (InsightException e) when (e.Category == InsightErrorCategory.InvalidParameter
-                                         && e.Parameter is { } engineName
-                                         && OptionNames.TryGetValue(engineName, out var name))
+        catch (AnalyticsException e) when (e.Parameter is { } engineName
+                                           && OptionNames.TryGetValue(engineName, out var name))
         {
             // The engine names the option in its own spelling and states its rule; this layer only
             // puts the option in ours. The rule itself stays the engine's.
-            var rule = e.Message.StartsWith(engineName + " ", StringComparison.Ordinal)
-                ? e.Message[(engineName.Length + 1)..]
-                : e.Message;
-            throw new ArgumentException($"{name} {rule}.", nameof(options), e);
+            throw new ArgumentException($"{name} {Rule(e.Message, engineName)}.", nameof(options), e);
         }
 
         return new SeriesAnomalyReport
@@ -119,23 +124,23 @@ public static class TimeSeriesAnalyzer
     /// so it is never asked for more than that.</param>
     /// <exception cref="ArgumentException">Fewer than <see cref="MinimumAutocorrelationPoints"/> values,
     /// a value that is not finite, or a <paramref name="maxLag"/> outside what the sample allows.</exception>
-    /// <exception cref="InsightException">The series does not vary (its autocorrelation is
+    /// <exception cref="AnalyticsException">The series does not vary (its autocorrelation is
     /// undefined).</exception>
     public static SeriesAutocorrelation Autocorrelation(IReadOnlyList<double> series, int? maxLag = null)
     {
         var data = Validate(series, MinimumAutocorrelationPoints, nameof(series));
 
-        using var client = new InsightClient();
-        UInsight.AcfResult acf;
-        UInsight.PacfResult pacf;
+        using var client = new AnalyticsClient();
+        UAnalytics.AcfResult acf;
+        UAnalytics.PacfResult pacf;
         try
         {
             acf = client.Acf(data, maxLag);
             pacf = client.Pacf(data, maxLag is { } k ? Math.Min(k, data.Length / 2 - 1) : null);
         }
-        catch (InsightException e) when (e.Category == InsightErrorCategory.InvalidParameter && e.Parameter == "max_lag")
+        catch (AnalyticsException e) when (e.Parameter == "max_lag")
         {
-            throw new ArgumentException($"{nameof(maxLag)}: {e.Message}", nameof(maxLag), e);
+            throw new ArgumentException($"{nameof(maxLag)}: {Rule(e.Message, "max_lag")}", nameof(maxLag), e);
         }
 
         return new SeriesAutocorrelation
@@ -159,13 +164,13 @@ public static class TimeSeriesAnalyzer
     /// <c>true</c> around a linear trend. The same choice is made for both tests.</param>
     /// <exception cref="ArgumentException">Fewer than <see cref="MinimumStationarityPoints"/> values or a
     /// value that is not finite.</exception>
-    /// <exception cref="InsightException">The series does not vary, or is so regular that a test's
+    /// <exception cref="AnalyticsException">The series does not vary, or is so regular that a test's
     /// statistic is undefined.</exception>
     public static SeriesStationarity Stationarity(IReadOnlyList<double> series, bool aroundTrend = false)
     {
         var data = Validate(series, MinimumStationarityPoints, nameof(series));
 
-        using var client = new InsightClient();
+        using var client = new AnalyticsClient();
         var adf = client.AdfTest(data, aroundTrend ? AdfModel.ConstantTrend : AdfModel.Constant);
         var kpss = client.KpssTest(data, aroundTrend ? KpssModel.Trend : KpssModel.Level);
 
@@ -176,8 +181,8 @@ public static class TimeSeriesAnalyzer
             Adf = new UnitRootTest
             {
                 Statistic = adf.Statistic,
-                Lags = checked((int)adf.NLags),
-                Observations = checked((int)adf.NObs),
+                Lags = adf.NLags,
+                Observations = adf.NObs,
                 Levels = adf.Levels.Select(l => new TestLevel
                 {
                     Level = l.Level,
@@ -188,7 +193,7 @@ public static class TimeSeriesAnalyzer
             Kpss = new StationarityTest
             {
                 Statistic = kpss.Statistic,
-                Lags = checked((int)kpss.NLags),
+                Lags = kpss.NLags,
                 PValue = kpss.PValue,
                 PValueBound = kpss.PValueBound switch
                 {
@@ -217,35 +222,14 @@ public static class TimeSeriesAnalyzer
         ["batch_size"] = nameof(Models.SpectralResidualOptions.BatchSize)
     };
 
-    // An option left null keeps the engine's own default, read from a default instance rather than
-    // restated here, so the paper's values have one home. The engine checks every option's range;
-    // this layer checks only what its own conversion needs -- a count has no negative in the
-    // engine's unsigned type.
-    private static UInsight.SpectralResidualOptions? ToEngine(Models.SpectralResidualOptions? options)
+    // The rule an engine message states, without the option's own name in front of it.
+    private static string Rule(string message, string engineName)
     {
-        if (options is null)
-            return null;
-
-        var defaults = new UInsight.SpectralResidualOptions();
-        return new UInsight.SpectralResidualOptions
-        {
-            AveragingWindow = options.AveragingWindow is { } q
-                ? Count(q, nameof(options.AveragingWindow))
-                : defaults.AveragingWindow,
-            JudgementWindow = options.JudgementWindow is { } z
-                ? Count(z, nameof(options.JudgementWindow))
-                : defaults.JudgementWindow,
-            Threshold = options.Threshold ?? defaults.Threshold,
-            MinZscore = options.MinZscore ?? defaults.MinZscore,
-            Sensitivity = options.Sensitivity ?? defaults.Sensitivity,
-            BatchSize = options.BatchSize is { } n ? Count(n, nameof(options.BatchSize)) : defaults.BatchSize
-        };
+        foreach (var lead in new[] { engineName + ": ", engineName + " " })
+            if (message.StartsWith(lead, StringComparison.Ordinal))
+                return message[lead.Length..];
+        return message;
     }
-
-    private static uint Count(int value, string option) =>
-        value >= 0
-            ? (uint)value
-            : throw new ArgumentException($"{option} must not be negative (got {value}).", "options");
 
     private static double[] Validate(IReadOnlyList<double> series, int minimum, string name)
     {

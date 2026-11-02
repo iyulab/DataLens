@@ -180,7 +180,7 @@ public class TimeSeriesAnalyzerTests
     {
         var ex = Assert.Throws<ArgumentException>(() =>
             TimeSeriesAnalyzer.SpectralResidual(Sawtooth(40, 7), new SpectralResidualOptions { Threshold = 0 }));
-        var engine = Assert.IsType<UInsight.InsightException>(ex.InnerException);
+        var engine = Assert.IsType<UAnalytics.AnalyticsException>(ex.InnerException);
         Assert.Equal("threshold", engine.Parameter);
         Assert.Equal("Threshold must be a finite number > 0. (Parameter 'options')", ex.Message);
     }

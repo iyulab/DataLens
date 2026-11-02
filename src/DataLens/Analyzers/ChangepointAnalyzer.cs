@@ -1,6 +1,6 @@
 using DataLens.Adapters;
 using DataLens.Models;
-using UInsight;
+using UAnalytics;
 
 namespace DataLens.Analyzers;
 
@@ -15,22 +15,23 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
         if (numericColumns.Count == 0)
             return Task.FromResult(new ChangepointReport());
 
-        // PELT 는 변화점이 드문 데이터에서 가지치기가 듣지 않아 행 수에 O(n²) — 임계를 넘으면 건너뛰고 알린다.
-        if (options.ChangepointRowThreshold != 0 && (uint)adapter.RowCount > options.ChangepointRowThreshold)
-        {
-            warnings?.Add(new AnalysisWarning(
-                Analyzer: "Changepoints",
-                Category: WarningCategory.SkippedForSize,
-                Message: $"행 수 {adapter.RowCount} 가 ChangepointRowThreshold({options.ChangepointRowThreshold}) 를 넘어 변화점 탐지를 건너뜀 (행 수에 O(n²)). ChangepointRowThreshold = 0 이면 항상 실행."));
-            return Task.FromResult(new ChangepointReport());
-        }
+        // 변화점이 드문 데이터에서 다변량 PELT 와 Normal 비용의 PELT 는 가지치기가 듣지 않아 행 수에 O(n²) — 임계를 넘으면
+        // 그 탐지만 건너뛰고 알린다. L2 비용의 컬럼별 PELT 는 함수형 가지치기로 근-선형이라 언제나 돈다.
+        bool tooLarge = options.ChangepointRowThreshold != 0 && (uint)adapter.RowCount > options.ChangepointRowThreshold;
+        void SkippedForSize(string what) => warnings?.Add(new AnalysisWarning(
+            Analyzer: "Changepoints",
+            Category: WarningCategory.SkippedForSize,
+            Message: $"행 수 {adapter.RowCount} 가 ChangepointRowThreshold({options.ChangepointRowThreshold}) 를 넘어 {what}을 건너뜀 (행 수에 O(n²)). ChangepointRowThreshold = 0 이면 항상 실행."));
+        bool perColumn = !(tooLarge && options.ChangepointCost == ChangepointCost.Normal);
+        if (!perColumn)
+            SkippedForSize("Normal 비용의 컬럼별 변화점 탐지");
 
         // PELT는 시계열 데이터에 적용 → 각 숫자 컬럼을 독립적으로 분석
         // 결측값은 제거한 clean array 사용 (PELT는 연속 데이터 필요)
-        using var client = new InsightClient();
+        using var client = new AnalyticsClient();
         var results = new List<ColumnChangepointResult>();
 
-        foreach (var col in numericColumns)
+        foreach (var col in perColumn ? numericColumns : [])
         {
             try
             {
@@ -41,13 +42,13 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                     continue;
                 }
 
-                var peltResult = client.Pelt(
+                var peltResult = client.DetectChangepoints(
                     data,
-                    cost: ToPeltCost(options.ChangepointCost),
-                    penalty: options.ChangepointPenalty,
-                    minSegmentLen: options.ChangepointMinSegmentLength);
+                    penalty: Penalty(options),
+                    minSegmentLen: checked((int)options.ChangepointMinSegmentLength),
+                    cost: ToPeltCost(options.ChangepointCost));
 
-                var changepoints = peltResult.Changepoints;
+                var changepoints = Indices(peltResult.Changepoints);
                 var segments = BuildSegmentSummaries(data, changepoints);
 
                 results.Add(new ColumnChangepointResult
@@ -55,7 +56,7 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                     Name = col,
                     SampleSize = data.Length,
                     Changepoints = changepoints,
-                    NSegments = peltResult.NSegments,
+                    NSegments = checked((uint)peltResult.NSegments),
                     Segments = segments
                 });
             }
@@ -68,7 +69,9 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
 
         // 다변량 PELT (모든 숫자 컬럼 동시 분석)
         MultivariateChangepointResult? multivariate = null;
-        if (numericColumns.Count >= 2)
+        if (numericColumns.Count >= 2 && tooLarge)
+            SkippedForSize("다변량 변화점 탐지");
+        else if (numericColumns.Count >= 2)
         {
             try
             {
@@ -76,18 +79,27 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
                 int nRows = matrix.GetLength(0);
                 if (nRows >= options.ChangepointMinSegmentLength * 2)
                 {
-                    var multiResult = client.PeltMulti(
-                        matrix,
-                        cost: ToPeltCost(options.ChangepointCost),
-                        penalty: options.ChangepointPenalty,
-                        minSegmentLen: options.ChangepointMinSegmentLength);
+                    // One signal per column: the engine takes channels, not rows.
+                    int nCols = matrix.GetLength(1);
+                    var signals = new double[nCols][];
+                    for (int c = 0; c < nCols; c++)
+                    {
+                        signals[c] = new double[nRows];
+                        for (int r = 0; r < nRows; r++)
+                            signals[c][r] = matrix[r, c];
+                    }
+                    var multiResult = client.DetectChangepointsMulti(
+                        signals,
+                        penalty: Penalty(options),
+                        minSegmentLen: checked((int)options.ChangepointMinSegmentLength),
+                        cost: ToPeltCost(options.ChangepointCost));
 
                     multivariate = new MultivariateChangepointResult
                     {
                         SampleSize = nRows,
                         Columns = numericColumns.ToList(),
-                        Changepoints = multiResult.Changepoints,
-                        NSegments = multiResult.NSegments
+                        Changepoints = Indices(multiResult.Changepoints),
+                        NSegments = checked((uint)multiResult.NSegments)
                     };
                 }
             }
@@ -104,6 +116,13 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
             Multivariate = multivariate
         });
     }
+
+    // 0 is this library's way of asking for BIC; the engine asks for it with no penalty at all.
+    private static double? Penalty(AnalysisOptions options) =>
+        options.ChangepointPenalty == 0.0 ? null : options.ChangepointPenalty;
+
+    private static uint[] Indices(IReadOnlyList<int> changepoints) =>
+        [.. changepoints.Select(c => checked((uint)c))];
 
     private static PeltCost ToPeltCost(ChangepointCost cost) => cost switch
     {
