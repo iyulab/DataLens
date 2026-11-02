@@ -8,6 +8,16 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-11-02
+
+### Fixed
+
+- ANOVA feature results carried the wrong column names: each was named after its place in the p-value order rather
+  than its own column. Takes UInsight 0.41.0, which reports each feature's column.
+- With a target column that has empty cells, the rows without a target were dropped from the target but kept in the
+  feature matrix, so the remaining targets were paired with the wrong rows (ANOVA, mutual information, permutation
+  importance). Such rows now leave the matrix too.
+
 ## [0.23.0] - 2026-11-02
 
 ### Changed
