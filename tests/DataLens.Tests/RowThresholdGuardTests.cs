@@ -125,4 +125,32 @@ public class RowThresholdGuardTests
         Assert.Null(result.Outliers!.Lof);
         Assert.Equal(["Changepoints", "Lof"], result.Warnings.Where(w => w.Category == WarningCategory.SkippedForSize).Select(w => w.Analyzer).Order());
     }
+
+    [Fact]
+    public async Task Hdbscan_AndHierarchical_AreSkippedAboveTheirThresholds_AndSaySo()
+    {
+        var warnings = new List<AnalysisWarning>();
+        var options = new AnalysisOptions { HdbscanRowThreshold = 200, HierarchicalRowThreshold = 200 };
+
+        var report = await new ClusterAnalyzer().AnalyzeAsync(Adapter(300), options, warnings);
+
+        Assert.Null(report.Hdbscan);
+        Assert.Null(report.Hierarchical);
+        var skipped = warnings.Where(w => w.Category == WarningCategory.SkippedForSize).Select(w => w.Analyzer).OrderBy(a => a).ToArray();
+        Assert.Equal(["HDBSCAN", "Hierarchical"], skipped);
+        Assert.Contains(warnings, w => w.Message.Contains(nameof(AnalysisOptions.HdbscanRowThreshold)));
+    }
+
+    [Fact]
+    public async Task Hdbscan_AndHierarchical_RunAtOrBelowTheirThresholds()
+    {
+        var warnings = new List<AnalysisWarning>();
+        var report = await new ClusterAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions(), warnings);
+
+        Assert.NotNull(report.Hdbscan);
+        Assert.NotNull(report.Hierarchical);
+        Assert.DoesNotContain(warnings, w => w.Category == WarningCategory.SkippedForSize);
+        Assert.Equal(10_000u, new AnalysisOptions().HdbscanRowThreshold);
+        Assert.Equal(10_000u, new AnalysisOptions().HierarchicalRowThreshold);
+    }
 }

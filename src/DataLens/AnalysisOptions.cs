@@ -91,6 +91,22 @@ public class AnalysisOptions
     public uint ChangepointRowThreshold { get; set; } = 20_000;
 
     /// <summary>
+    /// HDBSCAN 을 자동 skip 하는 행 수 임계값. HDBSCAN 은 행 수에 O(n²) 시간이고, UInsight 0.38 은 n×n 거리 행렬 둘을
+    /// 만들어 메모리도 O(n²) 다(10,000 행 ≈ 1.6 GB, 50,000 행 ≈ 40 GB). 행 수가 이 값을 초과하면
+    /// <see cref="IncludeClustering"/> 가 true 여도 HDBSCAN 은 건너뛰고 <see cref="Models.ClusterReport.Hdbscan"/> 가 null 이며
+    /// <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다. 0 이면 임계 없음.
+    /// </summary>
+    public uint HdbscanRowThreshold { get; set; } = 10_000;
+
+    /// <summary>
+    /// 계층적 군집을 자동 skip 하는 행 수 임계값. 계층적 군집은 압축 거리 행렬 n(n−1)/2 × 8 바이트가 필요하다
+    /// (10,000 행 ≈ 400 MB, 50,000 행 ≈ 10 GB). 행 수가 이 값을 초과하면 건너뛰고
+    /// <see cref="Models.ClusterReport.Hierarchical"/> 가 null 이며 <see cref="Models.WarningCategory.SkippedForSize"/> 경고로 알린다.
+    /// 0 이면 임계 없음.
+    /// </summary>
+    public uint HierarchicalRowThreshold { get; set; } = 10_000;
+
+    /// <summary>
     /// HDBSCAN 최소 클러스터 크기.
     /// </summary>
     public uint HdbscanMinClusterSize { get; set; } = 5;

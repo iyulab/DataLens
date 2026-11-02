@@ -8,6 +8,14 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Fixed
+
+- HDBSCAN and hierarchical clustering ran on every data set whatever its size, and both need memory
+  that grows with the square of the rows (hierarchical: about 10 GB at 50,000 rows; HDBSCAN: about
+  40 GB), so a large file failed or exhausted the machine. They are now skipped above
+  `AnalysisOptions.HdbscanRowThreshold` and `HierarchicalRowThreshold` (10,000 rows each, `0` = no
+  limit) and the report says so with a `SkippedForSize` warning, as for LOF and change points.
+
 ## [0.21.1] - 2026-11-02
 
 ### Fixed

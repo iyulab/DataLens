@@ -113,40 +113,46 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 
         // Hierarchical
         HierarchicalReport? hierarchicalReport = null;
-        try
+        if (!SkippedForSize("Hierarchical", nameof(AnalysisOptions.HierarchicalRowThreshold), options.HierarchicalRowThreshold, matrix.GetLength(0), "압축 거리 행렬 n(n−1)/2", warnings))
         {
-            var hier = client.Hierarchical(matrix, Linkage.Ward, optimalK);
-            hierarchicalReport = new HierarchicalReport
+            try
             {
-                NClusters = hier.NClusters,
-                Labels = hier.Labels,
-                MergeDistances = hier.MergeDistances
-            };
-        }
-        catch (Exception ex)
-        {
-            warnings?.Add(AnalysisWarning.FromException("Hierarchical", ex));
+                var hier = client.Hierarchical(matrix, Linkage.Ward, optimalK);
+                hierarchicalReport = new HierarchicalReport
+                {
+                    NClusters = hier.NClusters,
+                    Labels = hier.Labels,
+                    MergeDistances = hier.MergeDistances
+                };
+            }
+            catch (Exception ex)
+            {
+                warnings?.Add(AnalysisWarning.FromException("Hierarchical", ex));
+            }
         }
 
         // HDBSCAN
         HdbscanReport? hdbscanReport = null;
-        try
+        if (!SkippedForSize("HDBSCAN", nameof(AnalysisOptions.HdbscanRowThreshold), options.HdbscanRowThreshold, matrix.GetLength(0), "행 수에 O(n²)", warnings))
         {
-            uint minSamples = options.HdbscanMinSamples == 0
-                ? options.HdbscanMinClusterSize
-                : options.HdbscanMinSamples;
-            var hdb = client.Hdbscan(matrix, options.HdbscanMinClusterSize, minSamples);
-            hdbscanReport = new HdbscanReport
+            try
             {
-                NClusters = hdb.NClusters,
-                NoiseCount = hdb.NoiseCount,
-                Labels = hdb.Labels,
-                Probabilities = hdb.Probabilities
-            };
-        }
-        catch (Exception ex)
-        {
-            warnings?.Add(AnalysisWarning.FromException("HDBSCAN", ex));
+                uint minSamples = options.HdbscanMinSamples == 0
+                    ? options.HdbscanMinClusterSize
+                    : options.HdbscanMinSamples;
+                var hdb = client.Hdbscan(matrix, options.HdbscanMinClusterSize, minSamples);
+                hdbscanReport = new HdbscanReport
+                {
+                    NClusters = hdb.NClusters,
+                    NoiseCount = hdb.NoiseCount,
+                    Labels = hdb.Labels,
+                    Probabilities = hdb.Probabilities
+                };
+            }
+            catch (Exception ex)
+            {
+                warnings?.Add(AnalysisWarning.FromException("HDBSCAN", ex));
+            }
         }
 
         return Task.FromResult(new ClusterReport
@@ -158,5 +164,17 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
             Hierarchical = hierarchicalReport,
             Hdbscan = hdbscanReport
         });
+    }
+
+    /// <summary>행 수가 <paramref name="threshold"/> 를 넘으면 경고를 남기고 true(건너뜀). 0 은 임계 없음.</summary>
+    private static bool SkippedForSize(string analyzer, string option, uint threshold, int rows, string why, ICollection<AnalysisWarning>? warnings)
+    {
+        if (threshold == 0 || (uint)rows <= threshold)
+            return false;
+        warnings?.Add(new AnalysisWarning(
+            Analyzer: analyzer,
+            Category: WarningCategory.SkippedForSize,
+            Message: $"행 수 {rows} 가 {option}({threshold}) 를 넘어 {analyzer} 를 건너뜀 ({why}). {option} = 0 이면 항상 실행."));
+        return true;
     }
 }
