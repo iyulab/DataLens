@@ -8,6 +8,12 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Takes UInsight 0.39.0. Its LOF finds neighbours through a k-d tree (about 50 times faster at 25,000 rows, the same
+  scores) and its HDBSCAN runs in memory linear in the rows, so `LofRowThreshold` rises from 20,000 to 100,000 and
+  `HdbscanRowThreshold` from 10,000 to 20,000.
+
 ### Fixed
 
 - HDBSCAN and hierarchical clustering ran on every data set whatever its size, and both need memory

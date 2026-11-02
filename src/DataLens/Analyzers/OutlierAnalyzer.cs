@@ -56,7 +56,7 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
             warnings?.Add(new AnalysisWarning(
                 Analyzer: "Lof",
                 Category: WarningCategory.SkippedForSize,
-                Message: $"행 수 {nRows} 가 LofRowThreshold({options.LofRowThreshold}) 를 넘어 LOF 를 건너뜀 (행 수에 O(n²)). 앙상블 이상치는 IsolationForest·Mahalanobis 로 판정. LofRowThreshold = 0 이면 항상 실행."));
+                Message: $"행 수 {nRows} 가 LofRowThreshold({options.LofRowThreshold}) 를 넘어 LOF 를 건너뜀 (열이 많으면 행 수에 O(n²)). 앙상블 이상치는 IsolationForest·Mahalanobis 로 판정. LofRowThreshold = 0 이면 항상 실행."));
         }
         else
         {

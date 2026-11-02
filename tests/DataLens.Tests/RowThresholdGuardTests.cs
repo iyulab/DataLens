@@ -31,7 +31,7 @@ public class RowThresholdGuardTests
     {
         var options = new AnalysisOptions();
 
-        Assert.Equal(20_000u, options.LofRowThreshold);
+        Assert.Equal(100_000u, options.LofRowThreshold);
         Assert.Equal(20_000u, options.ChangepointRowThreshold);
     }
 
@@ -150,7 +150,7 @@ public class RowThresholdGuardTests
         Assert.NotNull(report.Hdbscan);
         Assert.NotNull(report.Hierarchical);
         Assert.DoesNotContain(warnings, w => w.Category == WarningCategory.SkippedForSize);
-        Assert.Equal(10_000u, new AnalysisOptions().HdbscanRowThreshold);
+        Assert.Equal(20_000u, new AnalysisOptions().HdbscanRowThreshold);
         Assert.Equal(10_000u, new AnalysisOptions().HierarchicalRowThreshold);
     }
 }
