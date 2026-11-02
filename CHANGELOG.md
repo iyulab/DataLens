@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-02
+
 ### Changed
 
 - Change points, the dominant period, spectral-residual anomaly scores, the autocorrelation functions and the
