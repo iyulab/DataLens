@@ -94,4 +94,36 @@ public class FeatureAnalyzerTests
         Assert.True(x.Importance > noise.Importance,
             $"X({x.Importance}) should outrank noise N({noise.Importance})");
     }
+
+    // A categorical target with a missing label: the row leaves the matrix with its label, and each
+    // ANOVA result is named after its own column whatever its place in the p-value order.
+    [Fact]
+    public async Task CategoricalTarget_AnovaNamesItsColumns_AndDropsUnlabelledRows()
+    {
+        var rng = new Random(3);
+        var data = new List<Dictionary<string, string>>();
+        for (int i = 0; i < 60; i++)
+        {
+            var cls = i % 3;
+            data.Add(new Dictionary<string, string>
+            {
+                ["Noise"] = (rng.NextDouble() * 10).ToString("R"),
+                ["Separates"] = (cls * 10 + rng.NextDouble()).ToString("R"),
+                ["Class"] = i == 7 ? "" : $"c{cls}",
+            });
+        }
+        var adapter = new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
+        var warnings = new List<AnalysisWarning>();
+
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            adapter, new AnalysisOptions { TargetColumn = "Class" }, warnings);
+
+        Assert.Empty(warnings);
+        Assert.NotNull(report.Anova);
+        var first = report.Anova!.Features[0];
+        Assert.Equal("Separates", first.Name);
+        Assert.Equal(1, first.Index);
+        Assert.True(first.PValue < 1e-6, $"p = {first.PValue}");
+        Assert.Equal("Noise", report.Anova.Features[1].Name);
+    }
 }

@@ -63,14 +63,17 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
             if (adapter.CategoricalColumns.Contains(targetCol))
             {
                 var labels = adapter.ToLabels(targetCol);
-                // clean labels (uint.MaxValue 제거)
+                // 레이블이 없는 행(uint.MaxValue)은 레이블과 행렬에서 함께 뺀다 — 레이블만 빼면
+                // 남은 레이블이 다른 행에 붙고, 행 수보다 짧은 타깃이 네이티브 호출에 넘어간다.
+                var labelled = labels.Select(l => l != uint.MaxValue).ToArray();
                 var cleanLabels = labels.Where(l => l != uint.MaxValue).ToArray();
+                var labelledMatrix = KeepRows(matrix, labelled);
 
                 if (cleanLabels.Length > 3)
                 {
                     try
                     {
-                        var anovaResult = client.AnovaSelect(matrix, cleanLabels, options.SignificanceLevel);
+                        var anovaResult = client.AnovaSelect(labelledMatrix, cleanLabels, options.SignificanceLevel);
                         var anovaFeatures = new List<AnovaFeatureResult>();
                         foreach (var f in anovaResult.Features)
                         {
@@ -95,7 +98,7 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
 
                     try
                     {
-                        var miResult = client.MutualInfo(matrix, cleanLabels);
+                        var miResult = client.MutualInfo(labelledMatrix, cleanLabels);
                         var miFeatures = new List<MutualInfoFeatureResult>();
                         foreach (var f in miResult.Features)
                         {
@@ -126,8 +129,11 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
                     var featureCols = numericCols.Where(c => c != targetCol).ToList();
                     if (featureCols.Count >= 1)
                     {
-                        var featureMatrix = adapter.ToImputedMatrix(featureCols.ToArray());
-                        var targetArray = adapter.ToCleanArray(targetCol);
+                        // 타깃이 비어 있는 행은 행렬에서도 뺀다(타깃 배열과 행 정합).
+                        var rawTarget = adapter.ToArray(targetCol);
+                        var present = rawTarget.Select(v => !double.IsNaN(v)).ToArray();
+                        var featureMatrix = KeepRows(adapter.ToImputedMatrix(featureCols.ToArray()), present);
+                        var targetArray = rawTarget.Where(v => !double.IsNaN(v)).ToArray();
                         var permResult = client.PermutationImportance(featureMatrix, targetArray);
                         var permFeatures = new List<PermutationFeatureResult>();
                         foreach (var f in permResult.Features)
@@ -162,5 +168,22 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
             MutualInfo = mutualInfo,
             Permutation = permutation
         });
+    }
+
+    /// <summary>`keep[i]` 인 행만 남긴 행렬.</summary>
+    private static double[,] KeepRows(double[,] matrix, bool[] keep)
+    {
+        int nCols = matrix.GetLength(1);
+        int kept = keep.Count(k => k);
+        var result = new double[kept, nCols];
+        int r = 0;
+        for (int i = 0; i < keep.Length; i++)
+        {
+            if (!keep[i]) continue;
+            for (int j = 0; j < nCols; j++)
+                result[r, j] = matrix[i, j];
+            r++;
+        }
+        return result;
     }
 }
