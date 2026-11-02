@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-02
+
 ### Changed
 
 - Takes UInsight 0.39.0. Its LOF finds neighbours through a k-d tree (about 50 times faster at 25,000 rows, the same
