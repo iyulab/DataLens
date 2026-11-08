@@ -102,6 +102,24 @@ public class AnalysisOptions
     public uint HdbscanRowThreshold { get; set; } = 20_000;
 
     /// <summary>
+    /// 모든 점 쌍의 거리를 계산하는 분석 — DBSCAN · HDBSCAN · silhouette · 다변량 변화점 — 을 자동 skip 하는 작업량 임계값: 행 수² × 열 수.
+    /// (LOF 는 같은 모양의 임계를 <see cref="LofWorkThreshold"/> 로 따로 가진다.)
+    /// 위의 행 수 임계는 열이 적을 때를 기준으로 정해져 있어, 같은 2만 행이라도 200 열이면 20 배 무겁다
+    /// (2만 행 × 200 열, 단일 스레드: DBSCAN 65 초 · silhouette 64 초 · HDBSCAN 4 분 · 다변량 변화점 6 분 — <c>mloop info --analyze</c> 가 분 단위).
+    /// 작업량이 이 값을 넘고 열이 16 개를 넘으면 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다.
+    /// 열이 16 개 이하면 k-d tree 가 이웃을 행 수에 거의 O(n log n) 으로 찾아 이 임계는 보지 않는다(행 수 임계만 적용).
+    /// 기본값 2×10¹⁰ 은 2만 행 × 50 열(10 초 안팎)을 허용하고 2만 행 × 200 열을 건너뛴다. 0 이면 임계 없음.
+    /// </summary>
+    public ulong PairwiseWorkThreshold { get; set; } = 20_000_000_000;
+
+    /// <summary>
+    /// gap statistic(최적 군집 수 탐색)이 읽는 최대 행 수. 비용이 행 수 × 열 수 × 후보 K × 참조 표본에 비례한다(2만 행 × 200 열: 2 분).
+    /// 행 수가 이 값을 넘으면 고르게 떨어진 이 행 수만큼의 행(결정적)만으로 K 를 고르고 <see cref="Models.AnalysisWarning"/>
+    /// (<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다 — 이후의 K-Means 자체는 모든 행을 쓴다. 0 이면 상한 없음.
+    /// </summary>
+    public uint GapStatisticMaxRows { get; set; } = 5_000;
+
+    /// <summary>
     /// 계층적 군집을 자동 skip 하는 행 수 임계값. 계층적 군집은 압축 거리 행렬 n(n−1)/2 × 8 바이트가 필요하다
     /// (10,000 행 ≈ 400 MB, 50,000 행 ≈ 10 GB). 행 수가 이 값을 초과하면 건너뛰고
     /// <see cref="Models.ClusterReport.Hierarchical"/> 가 null 이며 <see cref="Models.WarningCategory.SkippedForSize"/> 경고로 알린다.

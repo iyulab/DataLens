@@ -25,8 +25,9 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
         {
             // 탐색 상한은 MaxClusters 이되 행 수를 넘지 않는다 — UInsight 0.26 부터
             // 행 수보다 큰 k_max 는 조정되지 않고 거절된다.
-            uint kMax = Math.Min(options.MaxClusters, (uint)matrix.GetLength(0));
-            var gap = client.GapStatistic(matrix, 2, kMax);
+            var gapMatrix = SampleRows("GapStatistic", matrix, options.GapStatisticMaxRows, warnings);
+            uint kMax = Math.Min(options.MaxClusters, (uint)gapMatrix.GetLength(0));
+            var gap = client.GapStatistic(gapMatrix, 2, kMax);
             optimalK = gap.BestK;
             gapValues = gap.GapValues;
         }
@@ -63,7 +64,8 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
             if (options.ComputeSilhouette
                 && kmeans.K >= 2
                 && (options.SilhouetteRowThreshold == 0
-                    || (uint)matrix.GetLength(0) <= options.SilhouetteRowThreshold))
+                    || (uint)matrix.GetLength(0) <= options.SilhouetteRowThreshold)
+                && !PairwiseWork.Skip("Silhouette", options, matrix.GetLength(0), matrix.GetLength(1), warnings))
             {
                 try
                 {
@@ -96,19 +98,22 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 
         // DBSCAN
         DbscanReport? dbscanReport = null;
-        try
+        if (!PairwiseWork.Skip("DBSCAN", options, matrix.GetLength(0), matrix.GetLength(1), warnings))
         {
-            var dbscan = client.Dbscan(matrix, 0.5, 5);
-            dbscanReport = new DbscanReport
+            try
             {
-                NClusters = dbscan.NClusters,
-                NoiseCount = dbscan.NoiseCount,
-                Labels = dbscan.Labels
-            };
-        }
-        catch (Exception ex)
-        {
-            warnings?.Add(AnalysisWarning.FromException("DBSCAN", ex));
+                var dbscan = client.Dbscan(matrix, 0.5, 5);
+                dbscanReport = new DbscanReport
+                {
+                    NClusters = dbscan.NClusters,
+                    NoiseCount = dbscan.NoiseCount,
+                    Labels = dbscan.Labels
+                };
+            }
+            catch (Exception ex)
+            {
+                warnings?.Add(AnalysisWarning.FromException("DBSCAN", ex));
+            }
         }
 
         // Hierarchical
@@ -133,7 +138,8 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 
         // HDBSCAN
         HdbscanReport? hdbscanReport = null;
-        if (!SkippedForSize("HDBSCAN", nameof(AnalysisOptions.HdbscanRowThreshold), options.HdbscanRowThreshold, matrix.GetLength(0), "행 수에 O(n²)", warnings))
+        if (!SkippedForSize("HDBSCAN", nameof(AnalysisOptions.HdbscanRowThreshold), options.HdbscanRowThreshold, matrix.GetLength(0), "행 수에 O(n²)", warnings)
+            && !PairwiseWork.Skip("HDBSCAN", options, matrix.GetLength(0), matrix.GetLength(1), warnings))
         {
             try
             {
@@ -164,6 +170,29 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
             Hierarchical = hierarchicalReport,
             Hdbscan = hdbscanReport
         });
+    }
+
+    /// <summary>
+    /// 행이 <paramref name="maxRows"/> 를 넘으면 고르게 떨어진 <paramref name="maxRows"/> 행(결정적)만 돌려주고 경고를 남긴다. 0 은 상한 없음.
+    /// </summary>
+    private static double[,] SampleRows(string analyzer, double[,] matrix, uint maxRows, ICollection<AnalysisWarning>? warnings)
+    {
+        int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
+        if (maxRows == 0 || (uint)rows <= maxRows)
+            return matrix;
+        int take = (int)maxRows;
+        var sample = new double[take, cols];
+        for (int i = 0; i < take; i++)
+        {
+            int source = (int)((long)i * rows / take);
+            for (int j = 0; j < cols; j++)
+                sample[i, j] = matrix[source, j];
+        }
+        warnings?.Add(new AnalysisWarning(
+            Analyzer: analyzer,
+            Category: WarningCategory.SkippedForSize,
+            Message: $"행 수 {rows} 가 GapStatisticMaxRows({maxRows}) 를 넘어 고르게 떨어진 {take} 행만으로 {analyzer} 를 계산함. GapStatisticMaxRows = 0 이면 모든 행."));
+        return sample;
     }
 
     /// <summary>행 수가 <paramref name="threshold"/> 를 넘으면 경고를 남기고 true(건너뜀). 0 은 임계 없음.</summary>

@@ -71,7 +71,8 @@ public class ChangepointAnalyzer : IAnalyzer<ChangepointReport>
         MultivariateChangepointResult? multivariate = null;
         if (numericColumns.Count >= 2 && tooLarge)
             SkippedForSize("다변량 변화점 탐지");
-        else if (numericColumns.Count >= 2)
+        else if (numericColumns.Count >= 2
+            && !PairwiseWork.Skip("Changepoints", options, adapter.RowCount, numericColumns.Count, warnings, "다변량 변화점 탐지"))
         {
             try
             {

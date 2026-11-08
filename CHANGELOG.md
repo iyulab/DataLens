@@ -8,6 +8,17 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Added
+
+- `AnalysisOptions.PairwiseWorkThreshold` (rows² × columns, default 2×10¹⁰) and `GapStatisticMaxRows` (default 5,000).
+  The row thresholds were set for a handful of columns, so a table of 200 columns paid twenty times the work under
+  the same row count: 20,000 rows by 200 columns took over 20 minutes to analyse (DBSCAN 65 s, silhouette 64 s,
+  HDBSCAN 4 min, multivariate change points 6 min, the gap statistic 2 min, on top of the local outlier factor
+  that `LofWorkThreshold` stops). Above the work threshold, with more than 16 columns (fewer are answered by a
+  k-d tree), DBSCAN, HDBSCAN, the silhouette and the multivariate change points are skipped and a `SkippedForSize`
+  warning says which and why; the gap statistic reads up to `GapStatisticMaxRows` evenly spaced rows and says so.
+  The same table now takes about 90 s. A threshold of 0 keeps the unconditional run.
+
 ## [0.24.0] - 2026-11-09
 
 ### Changed
