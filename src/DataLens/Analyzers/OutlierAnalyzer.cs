@@ -49,14 +49,15 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
             };
         });
 
-        // LOF 는 행 수에 O(n²) — 임계를 넘으면 건너뛰고 알린다 (앙상블은 나머지 둘로 판정).
+        // LOF 는 행 수에 O(n²) 이고 열 수에 비례해 느려진다 — 작업량(행² × 열)이 임계를 넘으면 건너뛰고 알린다 (앙상블은 나머지 둘로 판정).
         LofReport? lofReport = null;
-        if (options.LofRowThreshold != 0 && (uint)nRows > options.LofRowThreshold)
+        var lofWork = (double)nRows * nRows * matrix.GetLength(1);
+        if (options.LofWorkThreshold != 0 && lofWork > options.LofWorkThreshold)
         {
             warnings?.Add(new AnalysisWarning(
                 Analyzer: "Lof",
                 Category: WarningCategory.SkippedForSize,
-                Message: $"행 수 {nRows} 가 LofRowThreshold({options.LofRowThreshold}) 를 넘어 LOF 를 건너뜀 (열이 많으면 행 수에 O(n²)). 앙상블 이상치는 IsolationForest·Mahalanobis 로 판정. LofRowThreshold = 0 이면 항상 실행."));
+                Message: $"행 {nRows} × 숫자 컬럼 {matrix.GetLength(1)} 의 LOF 작업량(행² × 열 = {lofWork:0.###e+0})이 LofWorkThreshold({options.LofWorkThreshold}) 를 넘어 LOF 를 건너뜀 (행에 이차, 열에 비례). 앙상블 이상치는 IsolationForest·Mahalanobis 로 판정. LofWorkThreshold = 0 이면 항상 실행."));
         }
         else
         {

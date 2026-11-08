@@ -76,12 +76,14 @@ public class AnalysisOptions
     public uint SilhouetteRowThreshold { get; set; } = 50_000;
 
     /// <summary>
-    /// LOF(Local Outlier Factor)를 자동 skip 하는 행 수 임계값. UInsight 0.39 의 LOF 는 k-d tree 로 이웃을 찾아 열이 적으면 행 수에 거의 O(n log n) — 숫자 4 컬럼에서 50,000 행 1.5 초, 100,000 행 4.9 초(열이 많아지면 O(n²) 쪽).
-    /// 행 수가 이 값을 초과하면 <see cref="IncludeOutliers"/> 가 true 여도 LOF 는 건너뛰고 <see cref="Models.OutlierReport.Lof"/> 가 null,
+    /// LOF(Local Outlier Factor)를 자동 skip 하는 작업량 임계값 = 행 수² × 숫자 컬럼 수. UInsight 0.39 의 LOF 는 k-d tree 로 이웃을 찾지만 열이 많아지면 O(n²·열)로 퇴화한다
+    /// (행 수만으로 막으면 넓은 표를 놓친다 — 실측 20,000 행: 25 열 11 초 · 50 열 30 초 · 100 열 75 초 · 200 열 184 초; 10,000 행 × 200 열 36 초; 50,000 행 × 12 열 28 초 — 작업량 1 단위에 약 2 ns).
+    /// 기본 4×10¹⁰ 은 숫자 4 컬럼 100,000 행(전의 행 수 임계 100,000 이 허용하던 가장 큰 좁은 표 — 4.9 초)과 같고, 100 열이면 약 20,000 행, 200 열이면 약 14,000 행까지 돈다.
+    /// 작업량이 이 값을 초과하면 <see cref="IncludeOutliers"/> 가 true 여도 LOF 는 건너뛰고 <see cref="Models.OutlierReport.Lof"/> 가 null,
     /// 앙상블은 나머지 알고리즘만으로 판정하며 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다.
     /// 0 이면 임계 없음 (항상 산출). O(n²) 비용 보호용.
     /// </summary>
-    public uint LofRowThreshold { get; set; } = 100_000;
+    public ulong LofWorkThreshold { get; set; } = 40_000_000_000;
 
     /// <summary>
     /// 행 수에 이차인 변화점 탐지(PELT)를 자동 skip 하는 행 수 임계값 — 다변량(모든 숫자 컬럼 동시) 탐지와 <see cref="ChangepointCost.Normal"/>

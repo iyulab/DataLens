@@ -13,25 +13,24 @@ namespace DataLens.Tests;
 /// </summary>
 public class RowThresholdGuardTests
 {
-    private static DataAdapter Adapter(int rows)
+    private static DataAdapter Adapter(int rows, int columns = 3)
     {
         var rng = new Random(11);
         var data = Enumerable.Range(0, rows)
-            .Select(_ => new Dictionary<string, string>
-            {
-                ["A"] = (rng.NextDouble() * 10).ToString("R", System.Globalization.CultureInfo.InvariantCulture),
-                ["B"] = (rng.NextDouble() * 10).ToString("R", System.Globalization.CultureInfo.InvariantCulture),
-                ["C"] = (rng.NextDouble() * 10).ToString("R", System.Globalization.CultureInfo.InvariantCulture),
-            }).ToList();
+            .Select(_ => Enumerable.Range(0, columns).ToDictionary(
+                c => ((char)('A' + c)).ToString(),
+                _ => (rng.NextDouble() * 10).ToString("R", System.Globalization.CultureInfo.InvariantCulture)))
+            .ToList();
         return new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
     }
 
     [Fact]
-    public void TheDefaults_AreTwentyThousandRows()
+    public void TheDefaults_AreTheMeasuredCostBounds()
     {
         var options = new AnalysisOptions();
 
-        Assert.Equal(100_000u, options.LofRowThreshold);
+        // 100,000 rows of four numeric columns: the largest narrow table the old row threshold let through.
+        Assert.Equal(100_000UL * 100_000UL * 4UL, options.LofWorkThreshold);
         Assert.Equal(20_000u, options.ChangepointRowThreshold);
     }
 
@@ -40,35 +39,53 @@ public class RowThresholdGuardTests
     {
         var warnings = new List<AnalysisWarning>();
 
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofRowThreshold = 200 }, warnings);
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = 200_000 }, warnings);
 
         Assert.Null(report.Lof);
         Assert.NotNull(report.IsolationForest);
         Assert.NotNull(report.Mahalanobis);
         var skipped = Assert.Single(warnings, w => w.Category == WarningCategory.SkippedForSize);
         Assert.Equal("Lof", skipped.Analyzer);
-        Assert.Contains("LofRowThreshold", skipped.Message);
+        Assert.Contains("LofWorkThreshold", skipped.Message);
     }
 
     [Theory]
-    [InlineData(300u)]     // at or over the row count
-    [InlineData(0u)]       // no threshold
-    public async Task Lof_RunsAtOrBelowTheThreshold_AndWhenThereIsNone(uint threshold)
+    [InlineData(270_000UL)]  // 300 rows x 3 columns: at the work
+    [InlineData(0UL)]        // no threshold
+    public async Task Lof_RunsAtOrBelowTheThreshold_AndWhenThereIsNone(ulong threshold)
     {
         var warnings = new List<AnalysisWarning>();
 
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofRowThreshold = threshold }, warnings);
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = threshold }, warnings);
 
         Assert.NotNull(report.Lof);
         Assert.Equal(300, report.Lof!.Scores.Length);
         Assert.DoesNotContain(warnings, w => w.Category == WarningCategory.SkippedForSize);
     }
 
+    // The same rows are cheap when narrow and skipped when wide: the work is rows squared times columns, so a row threshold alone lets a
+    // 20,000-row, 200-column table through (184 s measured) while a 20,000-row, 4-column one takes 5 s.
+    [Fact]
+    public async Task Lof_CountsTheColumns_NotOnlyTheRows()
+    {
+        var threshold = new AnalysisOptions { LofWorkThreshold = 300_000 };   // 300 rows: 3 columns = 270,000 (runs), 6 columns = 540,000 (skipped)
+        var narrow = new List<AnalysisWarning>();
+        var wide = new List<AnalysisWarning>();
+
+        var narrowReport = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 3), threshold, narrow);
+        var wideReport = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 6), threshold, wide);
+
+        Assert.NotNull(narrowReport.Lof);
+        Assert.DoesNotContain(narrow, w => w.Category == WarningCategory.SkippedForSize);
+        Assert.Null(wideReport.Lof);
+        Assert.Single(wide, w => w.Category == WarningCategory.SkippedForSize && w.Analyzer == "Lof");
+    }
+
     // With LOF out, a row is an ensemble outlier when the other two both say so.
     [Fact]
     public async Task WithoutLof_TheEnsembleIsTheOtherTwoAgreeing()
     {
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofRowThreshold = 200 });
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = 200_000 });
 
         var both = Enumerable.Range(0, 300).Count(i => report.IsolationForest!.Anomalies[i] && report.Mahalanobis!.Anomalies[i]);
         Assert.Equal(both, report.OutlierCount);
@@ -132,7 +149,7 @@ public class RowThresholdGuardTests
             IncludePca = false,
             IncludeOutliers = true,
             IncludeChangepoints = true,
-            LofRowThreshold = 200,
+            LofWorkThreshold = 200_000,
             ChangepointRowThreshold = 200,
         };
 

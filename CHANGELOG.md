@@ -8,6 +8,16 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: `AnalysisOptions.LofRowThreshold` is replaced by `LofWorkThreshold`.** LOF is skipped by the work it costs - rows squared times numeric columns -
+  not by the row count alone. A row threshold let a wide table through: with 20,000 rows LOF took 11 s at 25 columns, 30 s at 50, 75 s at 100 and 184 s at
+  200 (10,000 rows by 200 columns: 36 s; 50,000 rows by 12 columns: 28 s), so the outlier analysis of a 200-column file took 3 minutes where it needs 3.7 seconds
+  without LOF. The default, 40 000 000 000, is the largest narrow table the old default let through (100,000 rows by 4 columns, 5 s) and
+  now also stops at about 20,000 rows by 100 columns and 14,000 rows by 200. A skipped LOF reports `WarningCategory.SkippedForSize` as before, `OutlierReport.Lof`
+  is `null` and the ensemble needs the other two algorithms to agree; `0` keeps the unconditional run. Migrate a caller that set `LofRowThreshold = n`
+  to `LofWorkThreshold = n * n * columns`, or to `0`.
+
 ## [0.23.2] - 2026-11-08
 
 Takes UInsight 0.42.0 and UAnalytics 0.28.0.
