@@ -8,8 +8,11 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-09
+
 ### Changed
 
+- Takes FilePrepper 0.14.0 (CSV reading and writing on CsvHelper 34): a semicolon-, tab- or pipe-delimited file named `.csv` is read with its own delimiter (it was read as one column), a header name that holds a comma or a quote is written quoted, and a quoted cell with a line break no longer hides a file's delimiter.
 - **BREAKING: `AnalysisOptions.LofRowThreshold` is replaced by `LofWorkThreshold`.** LOF is skipped by the work it costs - rows squared times numeric columns -
   not by the row count alone. A row threshold let a wide table through: with 20,000 rows LOF took 11 s at 25 columns, 30 s at 50, 75 s at 100 and 184 s at
   200 (10,000 rows by 200 columns: 36 s; 50,000 rows by 12 columns: 28 s), so the outlier analysis of a 200-column file took 3 minutes where it needs 3.7 seconds
