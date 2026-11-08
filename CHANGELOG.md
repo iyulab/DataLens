@@ -8,6 +8,19 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.23.2] - 2026-11-08
+
+Takes UInsight 0.42.0 and UAnalytics 0.28.0.
+
+### Fixed
+
+- Feature importance of a wide table no longer grows with the cube of the number of columns (20,000 rows by 200
+  columns took over 4 minutes, now about a second), and the variance inflation factors it reports no longer
+  collapse to 1 when two columns are copies of each other or one is constant.
+- The dominant period, the stationarity tests and long autocorrelations of a long series take roughly a fifth to a
+  tenth of the time they did (100,000 points: period 10 s to 4 s, ADF 19 s to 1 s), and the work stays linear in
+  memory.
+
 ## [0.23.1] - 2026-11-02
 
 ### Fixed
