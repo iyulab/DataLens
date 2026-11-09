@@ -8,8 +8,8 @@ namespace DataLens.Analyzers;
 /// </summary>
 internal static class PairwiseWork
 {
-    /// <summary>이 열 수 이하면 k-d tree 가 이웃을 행 수에 거의 O(n log n) 으로 찾아 행 수 임계만 본다.</summary>
-    internal const int TreeFriendlyColumns = 16;
+    /// <summary>이 열 수 이하면 k-d tree 가 이웃을 행 수에 가깝게 찾아 행 수 임계만 본다 — 6 열(LOF 10 만 행 31 초)까지; 8 열부터(109 초)는 작업량이 비용을 말한다.</summary>
+    internal const int TreeFriendlyColumns = 6;
 
     /// <summary>행² × 열이 <see cref="AnalysisOptions.PairwiseWorkThreshold"/> 를 넘는가 (열이 <see cref="TreeFriendlyColumns"/> 이하면 아니오).</summary>
     internal static bool Exceeds(AnalysisOptions options, int rows, int columns) =>

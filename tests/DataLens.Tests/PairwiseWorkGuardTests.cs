@@ -10,7 +10,7 @@ namespace DataLens.Tests;
 /// the silhouette 64 s, HDBSCAN 4 min, the multivariate change points 6 min and the gap statistic 2 min (single thread), all under the row
 /// thresholds that were set for a handful of columns - <c>mloop info --analyze</c> took minutes to hours (the local outlier factor, 184 s,
 /// is guarded by the same threshold). Past <see cref="AnalysisOptions.PairwiseWorkThreshold"/> (rows² × columns, with more than
-/// 16 columns - fewer are answered by a k-d tree in about <c>n log n</c>) the all-pairs analyses are skipped and the report says so; the gap
+/// 6 columns - fewer are answered by a k-d tree) the all-pairs analyses are skipped and the report says so; the gap
 /// statistic reads at most <see cref="AnalysisOptions.GapStatisticMaxRows"/> evenly spaced rows.
 /// </summary>
 public class PairwiseWorkGuardTests
@@ -35,7 +35,7 @@ public class PairwiseWorkGuardTests
         Assert.Equal(5_000u, options.GapStatisticMaxRows);
     }
 
-    // The local outlier factor is one of the all-pairs analyses: the same threshold, the same 16-column exemption.
+    // The local outlier factor is one of the all-pairs analyses: the same threshold, the same 6-column exemption.
     [Fact]
     public async Task Lof_IsGuardedByThePairwiseThreshold_OnAWideTable()
     {
@@ -48,6 +48,20 @@ public class PairwiseWorkGuardTests
         var skipped = Assert.Single(warnings, w => w.Category == WarningCategory.SkippedForSize);
         Assert.Equal("Lof", skipped.Analyzer);
         Assert.Contains("PairwiseWorkThreshold", skipped.Message);
+    }
+
+    // Measured on 100,000 rows: the local outlier factor takes 31 s at 6 columns and 109 s at 8 - the k-d tree stops helping there.
+    [Theory]
+    [InlineData(6, false)]
+    [InlineData(7, true)]
+    public async Task TheTreeExemption_EndsAfterSixColumns(int columns, bool skipped)
+    {
+        var warnings = new List<AnalysisWarning>();
+
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(200, columns), new AnalysisOptions { PairwiseWorkThreshold = 1 }, warnings);
+
+        Assert.Equal(skipped, report.Lof is null);
+        Assert.Equal(skipped, warnings.Any(w => w.Category == WarningCategory.SkippedForSize && w.Analyzer == "Lof"));
     }
 
     [Fact]
