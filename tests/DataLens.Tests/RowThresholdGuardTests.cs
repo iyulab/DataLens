@@ -8,8 +8,8 @@ namespace DataLens.Tests;
 /// <summary>
 /// Local outlier factor and PELT change points are quadratic in the rows (four numeric columns: LOF 5 s at 20,000 rows and 32 s at 50,000,
 /// PELT 1.4 s and 10 s), and both ran by default - an analysis of a large file took minutes to hours for results nobody asked for. Above a
-/// row threshold they are skipped and the report says so; a threshold of 0 keeps the old, unconditional run. The thresholds here are small so
-/// that the tests stay cheap.
+/// threshold they are skipped and the report says so (LOF by the work, <see cref="AnalysisOptions.PairwiseWorkThreshold"/>; PELT by the rows);
+/// a threshold of 0 keeps the old, unconditional run. The thresholds here are small so that the tests stay cheap.
 /// </summary>
 public class RowThresholdGuardTests
 {
@@ -29,8 +29,8 @@ public class RowThresholdGuardTests
     {
         var options = new AnalysisOptions();
 
-        // 100,000 rows of four numeric columns: the largest narrow table the old row threshold let through.
-        Assert.Equal(100_000UL * 100_000UL * 4UL, options.LofWorkThreshold);
+        // 20,000 rows of 50 numeric columns (about 10 s of the all-pairs analyses): the widest table the work threshold lets through.
+        Assert.Equal(20_000UL * 20_000UL * 50UL, options.PairwiseWorkThreshold);
         Assert.Equal(20_000u, options.ChangepointRowThreshold);
     }
 
@@ -39,24 +39,25 @@ public class RowThresholdGuardTests
     {
         var warnings = new List<AnalysisWarning>();
 
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = 200_000 }, warnings);
+        // 300 rows x 20 columns: 1,800,000 > 1,000,000, and more than 16 columns.
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 20), new AnalysisOptions { PairwiseWorkThreshold = 1_000_000 }, warnings);
 
         Assert.Null(report.Lof);
         Assert.NotNull(report.IsolationForest);
         Assert.NotNull(report.Mahalanobis);
         var skipped = Assert.Single(warnings, w => w.Category == WarningCategory.SkippedForSize);
         Assert.Equal("Lof", skipped.Analyzer);
-        Assert.Contains("LofWorkThreshold", skipped.Message);
+        Assert.Contains("PairwiseWorkThreshold", skipped.Message);
     }
 
     [Theory]
-    [InlineData(270_000UL)]  // 300 rows x 3 columns: at the work
+    [InlineData(1_800_000UL)]  // 300 rows x 20 columns: at the work
     [InlineData(0UL)]        // no threshold
     public async Task Lof_RunsAtOrBelowTheThreshold_AndWhenThereIsNone(ulong threshold)
     {
         var warnings = new List<AnalysisWarning>();
 
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = threshold }, warnings);
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 20), new AnalysisOptions { PairwiseWorkThreshold = threshold }, warnings);
 
         Assert.NotNull(report.Lof);
         Assert.Equal(300, report.Lof!.Scores.Length);
@@ -64,16 +65,17 @@ public class RowThresholdGuardTests
     }
 
     // The same rows are cheap when narrow and skipped when wide: the work is rows squared times columns, so a row threshold alone lets a
-    // 20,000-row, 200-column table through (184 s measured) while a 20,000-row, 4-column one takes 5 s.
+    // 20,000-row, 200-column table through (184 s measured) while a 20,000-row, 4-column one takes 5 s (a k-d tree answers a table of
+    // 16 columns or fewer, whatever the work).
     [Fact]
     public async Task Lof_CountsTheColumns_NotOnlyTheRows()
     {
-        var threshold = new AnalysisOptions { LofWorkThreshold = 300_000 };   // 300 rows: 3 columns = 270,000 (runs), 6 columns = 540,000 (skipped)
+        var threshold = new AnalysisOptions { PairwiseWorkThreshold = 100_000 };   // 300 rows: 3 columns = 270,000 (narrow: runs), 20 columns = 1,800,000 (skipped)
         var narrow = new List<AnalysisWarning>();
         var wide = new List<AnalysisWarning>();
 
         var narrowReport = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 3), threshold, narrow);
-        var wideReport = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 6), threshold, wide);
+        var wideReport = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 20), threshold, wide);
 
         Assert.NotNull(narrowReport.Lof);
         Assert.DoesNotContain(narrow, w => w.Category == WarningCategory.SkippedForSize);
@@ -85,7 +87,7 @@ public class RowThresholdGuardTests
     [Fact]
     public async Task WithoutLof_TheEnsembleIsTheOtherTwoAgreeing()
     {
-        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { LofWorkThreshold = 200_000 });
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 20), new AnalysisOptions { PairwiseWorkThreshold = 1_000_000 });
 
         var both = Enumerable.Range(0, 300).Count(i => report.IsolationForest!.Anomalies[i] && report.Mahalanobis!.Anomalies[i]);
         Assert.Equal(both, report.OutlierCount);
@@ -136,7 +138,7 @@ public class RowThresholdGuardTests
     [Fact]
     public async Task TheEngine_ReportsBothSkips_OnALargeFrame()
     {
-        var df = Adapter(300).DataFrame;
+        var df = Adapter(300, columns: 20).DataFrame;
         var options = new AnalysisOptions
         {
             IncludeProfiling = false,
@@ -149,7 +151,7 @@ public class RowThresholdGuardTests
             IncludePca = false,
             IncludeOutliers = true,
             IncludeChangepoints = true,
-            LofWorkThreshold = 200_000,
+            PairwiseWorkThreshold = 1_000_000,
             ChangepointRowThreshold = 200,
         };
 

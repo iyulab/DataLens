@@ -3,7 +3,7 @@ using DataLens.Models;
 namespace DataLens.Analyzers;
 
 /// <summary>
-/// 모든 점 쌍의 거리를 계산하는 분석(DBSCAN · HDBSCAN · silhouette · 다변량 변화점)의 작업량 보호 — LOF 는 <see cref="AnalysisOptions.LofWorkThreshold"/>.
+/// 모든 점 쌍(또는 이웃)의 거리를 계산하는 분석(LOF · DBSCAN · HDBSCAN · silhouette · 다변량 변화점)의 작업량 보호.
 /// 비용은 행 수² × 열 수다 — 행 수 임계만으로는 200 열 표(같은 2만 행이 20 배)를 거르지 못한다.
 /// </summary>
 internal static class PairwiseWork

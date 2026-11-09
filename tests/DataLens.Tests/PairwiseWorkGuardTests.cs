@@ -8,8 +8,8 @@ namespace DataLens.Tests;
 /// <summary>
 /// The row thresholds guard an <c>n²</c> cost that grows with the columns as well: a 20,000-row table of 200 numeric columns ran DBSCAN 65 s,
 /// the silhouette 64 s, HDBSCAN 4 min, the multivariate change points 6 min and the gap statistic 2 min (single thread), all under the row
-/// thresholds that were set for a handful of columns - <c>mloop info --analyze</c> took minutes to hours (LOF has its own
-/// <see cref="AnalysisOptions.LofWorkThreshold"/>). Past <see cref="AnalysisOptions.PairwiseWorkThreshold"/> (rows² × columns, with more than
+/// thresholds that were set for a handful of columns - <c>mloop info --analyze</c> took minutes to hours (the local outlier factor, 184 s,
+/// is guarded by the same threshold). Past <see cref="AnalysisOptions.PairwiseWorkThreshold"/> (rows² × columns, with more than
 /// 16 columns - fewer are answered by a k-d tree in about <c>n log n</c>) the all-pairs analyses are skipped and the report says so; the gap
 /// statistic reads at most <see cref="AnalysisOptions.GapStatisticMaxRows"/> evenly spaced rows.
 /// </summary>
@@ -35,13 +35,27 @@ public class PairwiseWorkGuardTests
         Assert.Equal(5_000u, options.GapStatisticMaxRows);
     }
 
-    // LOF has a work threshold of its own (LofWorkThreshold); this one does not guard it.
+    // The local outlier factor is one of the all-pairs analyses: the same threshold, the same 16-column exemption.
     [Fact]
-    public async Task Lof_IsGuardedByItsOwnThreshold_NotThePairwiseOne()
+    public async Task Lof_IsGuardedByThePairwiseThreshold_OnAWideTable()
     {
         var warnings = new List<AnalysisWarning>();
 
         var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(200, 20), new AnalysisOptions { PairwiseWorkThreshold = 1 }, warnings);
+
+        Assert.Null(report.Lof);
+        Assert.NotNull(report.IsolationForest);
+        var skipped = Assert.Single(warnings, w => w.Category == WarningCategory.SkippedForSize);
+        Assert.Equal("Lof", skipped.Analyzer);
+        Assert.Contains("PairwiseWorkThreshold", skipped.Message);
+    }
+
+    [Fact]
+    public async Task Lof_RunsOnANarrowTable_WhateverTheThreshold()
+    {
+        var warnings = new List<AnalysisWarning>();
+
+        var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(200, 4), new AnalysisOptions { PairwiseWorkThreshold = 1 }, warnings);
 
         Assert.NotNull(report.Lof);
         Assert.DoesNotContain(warnings, w => w.Category == WarningCategory.SkippedForSize);

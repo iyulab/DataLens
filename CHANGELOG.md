@@ -13,11 +13,20 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 - `AnalysisOptions.PairwiseWorkThreshold` (rows² × columns, default 2×10¹⁰) and `GapStatisticMaxRows` (default 5,000).
   The row thresholds were set for a handful of columns, so a table of 200 columns paid twenty times the work under
   the same row count: 20,000 rows by 200 columns took over 20 minutes to analyse (DBSCAN 65 s, silhouette 64 s,
-  HDBSCAN 4 min, multivariate change points 6 min, the gap statistic 2 min, on top of the local outlier factor
-  that `LofWorkThreshold` stops). Above the work threshold, with more than 16 columns (fewer are answered by a
-  k-d tree), DBSCAN, HDBSCAN, the silhouette and the multivariate change points are skipped and a `SkippedForSize`
+  HDBSCAN 4 min, multivariate change points 6 min, the gap statistic 2 min, the local outlier factor 3 min). Above
+  the work threshold, with more than 16 columns (fewer are answered by a k-d tree), the local outlier factor,
+  DBSCAN, HDBSCAN, the silhouette and the multivariate change points are skipped and a `SkippedForSize`
   warning says which and why; the gap statistic reads up to `GapStatisticMaxRows` evenly spaced rows and says so.
   The same table now takes about 90 s. A threshold of 0 keeps the unconditional run.
+
+### Changed
+
+- **BREAKING: `AnalysisOptions.LofWorkThreshold` (0.24.0) is removed; the local outlier factor is guarded by `PairwiseWorkThreshold`.**
+  Two thresholds of the same shape (rows squared times columns) for five analyses that cost the same way were one too many. The
+  differences to carry over: the default is 2×10¹⁰ rather than 4×10¹⁰, and a table of 16 columns or fewer is no longer stopped by the
+  work (a k-d tree answers it - 5 s for 100,000 rows by 4 columns, 28 s for 50,000 by 12), so LOF now also runs on a narrow table of
+  more than 100,000 rows, while a wide one is skipped at about 20,000 rows by 50 columns. Migrate `LofWorkThreshold = n` to
+  `PairwiseWorkThreshold = n`, or to `0` to keep the unconditional run.
 
 ## [0.24.0] - 2026-11-09
 

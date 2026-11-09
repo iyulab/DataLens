@@ -76,16 +76,6 @@ public class AnalysisOptions
     public uint SilhouetteRowThreshold { get; set; } = 50_000;
 
     /// <summary>
-    /// LOF(Local Outlier Factor)를 자동 skip 하는 작업량 임계값 = 행 수² × 숫자 컬럼 수. UInsight 0.39 의 LOF 는 k-d tree 로 이웃을 찾지만 열이 많아지면 O(n²·열)로 퇴화한다
-    /// (행 수만으로 막으면 넓은 표를 놓친다 — 실측 20,000 행: 25 열 11 초 · 50 열 30 초 · 100 열 75 초 · 200 열 184 초; 10,000 행 × 200 열 36 초; 50,000 행 × 12 열 28 초 — 작업량 1 단위에 약 2 ns).
-    /// 기본 4×10¹⁰ 은 숫자 4 컬럼 100,000 행(전의 행 수 임계 100,000 이 허용하던 가장 큰 좁은 표 — 4.9 초)과 같고, 100 열이면 약 20,000 행, 200 열이면 약 14,000 행까지 돈다.
-    /// 작업량이 이 값을 초과하면 <see cref="IncludeOutliers"/> 가 true 여도 LOF 는 건너뛰고 <see cref="Models.OutlierReport.Lof"/> 가 null,
-    /// 앙상블은 나머지 알고리즘만으로 판정하며 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다.
-    /// 0 이면 임계 없음 (항상 산출). O(n²) 비용 보호용.
-    /// </summary>
-    public ulong LofWorkThreshold { get; set; } = 40_000_000_000;
-
-    /// <summary>
     /// 행 수에 이차인 변화점 탐지(PELT)를 자동 skip 하는 행 수 임계값 — 다변량(모든 숫자 컬럼 동시) 탐지와 <see cref="ChangepointCost.Normal"/>
     /// 비용의 컬럼별 탐지에 걸린다. 변화점이 드문 데이터에서 그 둘은 가지치기가 듣지 않아 O(n²)이다(숫자 4 컬럼 50,000 행 17 초).
     /// <see cref="ChangepointCost.L2"/> 비용의 컬럼별 탐지는 평균 함수형 가지치기로 근-선형이라(UAnalytics 0.27 — 50,000 행 0.1 초) 임계 없이 언제나 돈다.
@@ -102,12 +92,12 @@ public class AnalysisOptions
     public uint HdbscanRowThreshold { get; set; } = 20_000;
 
     /// <summary>
-    /// 모든 점 쌍의 거리를 계산하는 분석 — DBSCAN · HDBSCAN · silhouette · 다변량 변화점 — 을 자동 skip 하는 작업량 임계값: 행 수² × 열 수.
-    /// (LOF 는 같은 모양의 임계를 <see cref="LofWorkThreshold"/> 로 따로 가진다.)
+    /// 모든 점 쌍(또는 이웃)의 거리를 계산하는 분석 — LOF · DBSCAN · HDBSCAN · silhouette · 다변량 변화점 — 을 자동 skip 하는 작업량 임계값: 행 수² × 열 수.
     /// 위의 행 수 임계는 열이 적을 때를 기준으로 정해져 있어, 같은 2만 행이라도 200 열이면 20 배 무겁다
-    /// (2만 행 × 200 열, 단일 스레드: DBSCAN 65 초 · silhouette 64 초 · HDBSCAN 4 분 · 다변량 변화점 6 분 — <c>mloop info --analyze</c> 가 분 단위).
-    /// 작업량이 이 값을 넘고 열이 16 개를 넘으면 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다.
-    /// 열이 16 개 이하면 k-d tree 가 이웃을 행 수에 거의 O(n log n) 으로 찾아 이 임계는 보지 않는다(행 수 임계만 적용).
+    /// (2만 행 × 200 열, 단일 스레드: LOF 184 초 · DBSCAN 65 초 · silhouette 64 초 · HDBSCAN 4 분 · 다변량 변화점 6 분 — <c>mloop info --analyze</c> 가 분 단위).
+    /// 작업량이 이 값을 넘고 열이 16 개를 넘으면 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다 —
+    /// LOF 가 건너뛰면 <see cref="Models.OutlierReport.Lof"/> 가 null 이고 앙상블은 나머지 알고리즘만으로 판정한다.
+    /// 열이 16 개 이하면 k-d tree 가 이웃을 행 수에 거의 O(n log n) 으로 찾아 이 임계는 보지 않는다(행 수 임계만 적용 — 실측 LOF: 4 열 10 만 행 5 초 · 12 열 5 만 행 28 초).
     /// 기본값 2×10¹⁰ 은 2만 행 × 50 열(10 초 안팎)을 허용하고 2만 행 × 200 열을 건너뛴다. 0 이면 임계 없음.
     /// </summary>
     public ulong PairwiseWorkThreshold { get; set; } = 20_000_000_000;
