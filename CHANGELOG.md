@@ -21,6 +21,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
+- Requires UAnalytics 0.29.0, which carries the fixes of u-analytics 0.35.0 and u-numflow 0.16.3: the median-rank
+  regression no longer tells identical failure times apart by rounding noise, and the normal tails, the Weibull and
+  exponential distributions at small probabilities and the quantiles behind the limits and p-values keep their digits.
+
 - Requires UInsight 0.43.0. Its k-d tree searches skip far more cells and DBSCAN and the silhouette no longer hold an
   `n × n` structure, so the exemption of the all-pairs guard extends from 6 to 7 columns (the local outlier factor on 100,000 rows takes
   7.6 s at 5 columns, 16 s at 6, 28 s at 7 and 42 s at 8); the silhouette of 20,000 rows that needed 3 GB now needs 6 to 36 MB.
