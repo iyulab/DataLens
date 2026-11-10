@@ -95,10 +95,10 @@ public class AnalysisOptions
     /// 모든 점 쌍(또는 이웃)의 거리를 계산하는 분석 — LOF · DBSCAN · HDBSCAN · silhouette · 다변량 변화점 — 을 자동 skip 하는 작업량 임계값: 행 수² × 열 수.
     /// 위의 행 수 임계는 열이 적을 때를 기준으로 정해져 있어, 같은 2만 행이라도 200 열이면 20 배 무겁다
     /// (2만 행 × 200 열, 단일 스레드: LOF 184 초 · DBSCAN 65 초 · silhouette 64 초 · HDBSCAN 4 분 · 다변량 변화점 6 분 — <c>mloop info --analyze</c> 가 분 단위).
-    /// 작업량이 이 값을 넘고 열이 6 개를 넘으면 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다 —
+    /// 작업량이 이 값을 넘고 열이 7 개를 넘으면 건너뛰고 <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다 —
     /// LOF 가 건너뛰면 <see cref="Models.OutlierReport.Lof"/> 가 null 이고 앙상블은 나머지 알고리즘만으로 판정한다.
-    /// 열이 6 개 이하면 k-d tree 가 이웃을 행 수에 가깝게 찾아 이 임계는 보지 않는다(행 수 임계만 적용). 이득은 6 열 부근에서 끝난다 —
-    /// 실측 LOF(10 만 행): 4 열 5 초 · 5 열 17 초 · 6 열 31 초 · 8 열 109 초 · 12 열 385 초 · 16 열 526 초; 4 열 100 만 행은 113 초(메모리 628 MB).
+    /// 열이 7 개 이하면 k-d tree 가 이웃을 행 수에 가깝게 찾아 이 임계는 보지 않는다(행 수 임계만 적용). 이득은 7 열 부근에서 끝난다 —
+    /// 실측 LOF(10 만 행, u-insight 0.43.0): 5 열 7.6 초 · 6 열 16 초 · 7 열 28 초 · 8 열 42 초; 4 열 100 만 행은 113 초(메모리 628 MB — 0.42.0 측정).
     /// 기본값 2×10¹⁰ 은 2만 행 × 50 열(10 초 안팎)을 허용하고 2만 행 × 200 열을 건너뛴다. 0 이면 임계 없음.
     /// </summary>
     public ulong PairwiseWorkThreshold { get; set; } = 20_000_000_000;

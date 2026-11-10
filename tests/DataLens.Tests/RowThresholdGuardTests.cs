@@ -39,7 +39,7 @@ public class RowThresholdGuardTests
     {
         var warnings = new List<AnalysisWarning>();
 
-        // 300 rows x 20 columns: 1,800,000 > 1,000,000, and more than 6 columns.
+        // 300 rows x 20 columns: 1,800,000 > 1,000,000, and more than 7 columns.
         var report = await new OutlierAnalyzer().AnalyzeAsync(Adapter(300, columns: 20), new AnalysisOptions { PairwiseWorkThreshold = 1_000_000 }, warnings);
 
         Assert.Null(report.Lof);
@@ -66,7 +66,7 @@ public class RowThresholdGuardTests
 
     // The same rows are cheap when narrow and skipped when wide: the work is rows squared times columns, so a row threshold alone lets a
     // 20,000-row, 200-column table through (184 s measured) while a 20,000-row, 4-column one takes 5 s (a k-d tree answers a table of
-    // 6 columns or fewer, whatever the work).
+    // 7 columns or fewer, whatever the work).
     [Fact]
     public async Task Lof_CountsTheColumns_NotOnlyTheRows()
     {
