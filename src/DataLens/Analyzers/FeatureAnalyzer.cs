@@ -21,34 +21,41 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
         if (matrix.GetLength(0) < 3)
             return Task.FromResult(new FeatureReport());
 
-        // 기본 FeatureImportance (타겟 불필요)
+        // 기본 FeatureImportance (타겟 불필요). 숫자 타깃이 지정됐으면 타깃은 피처가 아니다 — 행렬에 남기면
+        // 타깃이 피처와의 상관 쌍 · 조건수 · 점수 순위에 끼어 «다중공선성» 경고를 타깃-피처 관계가 일으키고
+        // 타깃 자신이 순위에 오른다. 타깃을 뺀 뒤 피처가 둘 미만이면 이 구조 진단은 말할 것이 없다.
+        var structuralCols = numericCols.Where(c => c != options.TargetColumn).ToList();
         FeatureImportanceSummary? importance = null;
-        try
+        if (structuralCols.Count >= 2)
         {
-            var fiResult = client.FeatureImportance(matrix);
-            var scores = new List<FeatureScore>();
-            for (int i = 0; i < fiResult.Scores.Length && i < numericCols.Count; i++)
+            try
             {
-                scores.Add(new FeatureScore
+                var structuralMatrix = structuralCols.Count == numericCols.Count ? matrix : adapter.ToImputedMatrix(structuralCols.ToArray());
+                var fiResult = client.FeatureImportance(structuralMatrix);
+                var scores = new List<FeatureScore>();
+                for (int i = 0; i < fiResult.Scores.Length && i < structuralCols.Count; i++)
                 {
-                    Name = numericCols[i],
-                    Index = i,
-                    Score = fiResult.Scores[i]
-                });
-            }
-            scores.Sort((a, b) => b.Score.CompareTo(a.Score));
+                    scores.Add(new FeatureScore
+                    {
+                        Name = structuralCols[i],
+                        Index = i,
+                        Score = fiResult.Scores[i]
+                    });
+                }
+                scores.Sort((a, b) => b.Score.CompareTo(a.Score));
 
-            importance = new FeatureImportanceSummary
+                importance = new FeatureImportanceSummary
+                {
+                    Scores = scores,
+                    ConditionNumber = fiResult.ConditionNumber,
+                    LowVarianceCount = fiResult.NLowVariance,
+                    HighCorrPairsCount = fiResult.NHighCorrPairs
+                };
+            }
+            catch (Exception ex)
             {
-                Scores = scores,
-                ConditionNumber = fiResult.ConditionNumber,
-                LowVarianceCount = fiResult.NLowVariance,
-                HighCorrPairsCount = fiResult.NHighCorrPairs
-            };
-        }
-        catch (Exception ex)
-        {
-            warnings?.Add(AnalysisWarning.FromException("FeatureImportance", ex));
+                warnings?.Add(AnalysisWarning.FromException("FeatureImportance", ex));
+            }
         }
 
         // 타겟이 지정된 경우 추가 분석

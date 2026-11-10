@@ -29,6 +29,14 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
   rows by 50 columns (the tree stops helping there: 109 s for 100,000 rows by 8 columns, 385 s by 12, 526 s by 16). Migrate `LofWorkThreshold = n` to
   `PairwiseWorkThreshold = n`, or to `0` to keep the unconditional run.
 
+### Fixed
+
+- The structural feature summary (scores, condition number, highly correlated pairs, low-variance count) no longer
+  counts a numeric target as one of its own features. With `AnalysisOptions.TargetColumn` naming a numeric column, the
+  target was ranked among the features and its pair with the feature that predicts it was reported as multicollinearity
+  (a condition number above 1,000 when the target is a near copy of one column). The summary is now about the other
+  columns; with no target named nothing changes.
+
 ## [0.24.0] - 2026-11-09
 
 ### Changed

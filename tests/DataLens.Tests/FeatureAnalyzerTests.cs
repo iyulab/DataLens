@@ -95,6 +95,25 @@ public class FeatureAnalyzerTests
             $"X({x.Importance}) should outrank noise N({noise.Importance})");
     }
 
+    // The structural summary (scores, condition number, correlated pairs) is about the features. A numeric target that
+    // tracks one of them used to join it: the target was ranked among its own features and its pair with the feature that
+    // predicts it was counted as multicollinearity.
+    [Fact]
+    public async Task NumericTarget_IsNotAFeatureOfTheStructuralSummary()
+    {
+        var adapter = BuildAdapter();
+
+        var withTarget = await new FeatureAnalyzer().AnalyzeAsync(adapter, new AnalysisOptions { TargetColumn = "Y" });
+        var withoutTarget = await new FeatureAnalyzer().AnalyzeAsync(adapter, new AnalysisOptions());
+
+        Assert.NotNull(withTarget.Importance);
+        Assert.Equal(["N", "X"], withTarget.Importance!.Scores.Select(f => f.Name).Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal(0u, withTarget.Importance.HighCorrPairsCount);   // X and Y track each other; Y is the target, not a feature
+        // no target named: nothing is the target, so X and Y are two features that say the same thing (the check sees the pair)
+        Assert.Equal(["N", "X", "Y"], withoutTarget.Importance!.Scores.Select(f => f.Name).Order(StringComparer.Ordinal).ToArray());
+        Assert.True(withoutTarget.Importance.HighCorrPairsCount >= 1u);
+    }
+
     // A categorical target with a missing label: the row leaves the matrix with its label, and each
     // ANOVA result is named after its own column whatever its place in the p-value order.
     [Fact]
