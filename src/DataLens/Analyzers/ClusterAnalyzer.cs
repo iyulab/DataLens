@@ -98,7 +98,8 @@ public class ClusterAnalyzer : IAnalyzer<ClusterReport>
 
         // DBSCAN
         DbscanReport? dbscanReport = null;
-        if (!PairwiseWork.Skip("DBSCAN", options, matrix.GetLength(0), matrix.GetLength(1), warnings))
+        if (!SkippedForSize("DBSCAN", nameof(AnalysisOptions.DbscanRowThreshold), options.DbscanRowThreshold, matrix.GetLength(0), "점마다 이웃을 모두 만나 행 수에 O(n²) 에 가깝다", warnings)
+            && !PairwiseWork.Skip("DBSCAN", options, matrix.GetLength(0), matrix.GetLength(1), warnings))
         {
             try
             {

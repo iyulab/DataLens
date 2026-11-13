@@ -92,6 +92,14 @@ public class AnalysisOptions
     public uint HdbscanRowThreshold { get; set; } = 20_000;
 
     /// <summary>
+    /// DBSCAN 을 자동 skip 하는 행 수 임계값. DBSCAN 은 점마다 반경 안의 이웃을 모두 만나, k-d tree 가 있어도 군집이 촘촘하면 행 수에 O(n²) 에 가깝다
+    /// (표준화 · 5 군집 합성 표 7 열, UInsight 0.43.1: 2 만 행 5 초 · 5 만 행 31 초 · 10 만 행 146 초 — 열이 늘어도 줄지 않는다). 행 수가 이 값을 초과하면
+    /// <see cref="IncludeClustering"/> 가 true 여도 DBSCAN 은 건너뛰고 <see cref="Models.ClusterReport.Dbscan"/> 이 null 이며
+    /// <see cref="Models.AnalysisWarning"/>(<see cref="Models.WarningCategory.SkippedForSize"/>)으로 알린다. 0 이면 임계 없음.
+    /// </summary>
+    public uint DbscanRowThreshold { get; set; } = 50_000;
+
+    /// <summary>
     /// 모든 점 쌍(또는 이웃)의 거리를 계산하는 분석 — LOF · DBSCAN · HDBSCAN · silhouette · 다변량 변화점 — 을 자동 skip 하는 작업량 임계값: 행 수² × 열 수.
     /// 위의 행 수 임계는 열이 적을 때를 기준으로 정해져 있어, 같은 2만 행이라도 200 열이면 20 배 무겁다
     /// (2만 행 × 200 열, 단일 스레드: LOF 184 초 · DBSCAN 65 초 · silhouette 64 초 · HDBSCAN 4 분 · 다변량 변화점 6 분 — <c>mloop info --analyze</c> 가 분 단위).

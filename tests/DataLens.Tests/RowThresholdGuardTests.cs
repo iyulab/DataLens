@@ -177,6 +177,25 @@ public class RowThresholdGuardTests
     }
 
     [Fact]
+    public async Task Dbscan_IsSkippedAboveItsRowThreshold_AndSaysSo_AndRunsAtOrBelowIt()
+    {
+        var skippedWarnings = new List<AnalysisWarning>();
+        var skipped = await new ClusterAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { DbscanRowThreshold = 299 }, skippedWarnings);
+
+        Assert.Null(skipped.Dbscan);
+        var warning = Assert.Single(skippedWarnings, w => w.Category == WarningCategory.SkippedForSize);
+        Assert.Equal("DBSCAN", warning.Analyzer);
+        Assert.Contains(nameof(AnalysisOptions.DbscanRowThreshold), warning.Message);
+
+        var ranWarnings = new List<AnalysisWarning>();
+        var ran = await new ClusterAnalyzer().AnalyzeAsync(Adapter(300), new AnalysisOptions { DbscanRowThreshold = 300 }, ranWarnings);
+
+        Assert.NotNull(ran.Dbscan);
+        Assert.DoesNotContain(ranWarnings, w => w.Analyzer == "DBSCAN");
+        Assert.Equal(50_000u, new AnalysisOptions().DbscanRowThreshold);
+    }
+
+    [Fact]
     public async Task Hdbscan_AndHierarchical_RunAtOrBelowTheirThresholds()
     {
         var warnings = new List<AnalysisWarning>();
