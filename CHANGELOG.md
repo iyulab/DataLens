@@ -8,6 +8,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+### Changed
+
+- Requires UInsight 0.43.1: the same results, from a faster nearest-neighbour search and a faster HDBSCAN. The all-pairs guard's tree exemption (7 columns) is kept as it was until it is measured again against the new release.
+
 ## [0.25.0] - 2026-11-14
 
 ### Added
