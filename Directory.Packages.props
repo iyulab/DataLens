@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- Core dependencies -->
     <PackageVersion Include="FilePrepper" Version="0.14.0" />
-    <PackageVersion Include="UAnalytics" Version="0.29.0" />
+    <PackageVersion Include="UAnalytics" Version="0.30.0" />
     <PackageVersion Include="UInsight" Version="0.43.1" />
 
     <!-- CLI dependencies -->
