@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-14
+
 ### Added
 
 - `AnalysisOptions.PairwiseWorkThreshold` (rows² × columns, default 2×10¹⁰) and `GapStatisticMaxRows` (default 5,000).
