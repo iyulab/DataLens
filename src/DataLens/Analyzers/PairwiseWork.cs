@@ -8,19 +8,29 @@ namespace DataLens.Analyzers;
 /// </summary>
 internal static class PairwiseWork
 {
-    /// <summary>이 열 수 이하면 k-d tree 가 이웃을 행 수에 가깝게 찾아 행 수 임계만 본다 — 7 열(LOF 10 만 행 28 초)까지; 8 열부터(42 초)는 작업량이 비용을 말한다.</summary>
+    /// <summary>
+    /// 이 열 수 이하면 k-d tree 가 이웃을 행 수에 가깝게 찾아 행 수 임계만 본다 — DBSCAN · HDBSCAN · silhouette · 다변량 변화점의 기본 경계.
+    /// DBSCAN 은 이웃 수에 비례해(밀도 · epsilon 에 따라) 열 수와 상관없이 느릴 수 있어(10 만 행: 7 열 146 초 · 8 열 89 초 · 12 열 69 초, 표준화 · epsilon 0.5 ·
+    /// 5 군집 합성 표, UInsight 0.43.1) 열 수를 더 넓히지 않는다. LOF 는 <see cref="LofTreeFriendlyColumns"/>.
+    /// </summary>
     internal const int TreeFriendlyColumns = 7;
 
-    /// <summary>행² × 열이 <see cref="AnalysisOptions.PairwiseWorkThreshold"/> 를 넘는가 (열이 <see cref="TreeFriendlyColumns"/> 이하면 아니오).</summary>
-    internal static bool Exceeds(AnalysisOptions options, int rows, int columns) =>
+    /// <summary>
+    /// LOF 의 면제 경계. 실측(10 만 행 5 군집 + 0.5 % 흩어진 이상치, UInsight 0.43.1): 7 열 7 초 · 8 열 7 초 · 9 열 12 초 · 10 열 16 초 ·
+    /// 12 열 26 초 · 14 열 36 초 — 종전 경계(7 열 28 초)와 같은 비용에 오는 12 열까지; 13 열부터는 작업량이 비용을 말한다.
+    /// </summary>
+    internal const int LofTreeFriendlyColumns = 12;
+
+    /// <summary>행² × 열이 <see cref="AnalysisOptions.PairwiseWorkThreshold"/> 를 넘는가 (열이 <paramref name="treeFriendlyColumns"/> 이하면 아니오).</summary>
+    internal static bool Exceeds(AnalysisOptions options, int rows, int columns, int treeFriendlyColumns = TreeFriendlyColumns) =>
         options.PairwiseWorkThreshold != 0
-        && columns > TreeFriendlyColumns
+        && columns > treeFriendlyColumns
         && Work(rows, columns) > options.PairwiseWorkThreshold;
 
     /// <summary>넘으면 경고를 남기고 true(건너뜀).</summary>
-    internal static bool Skip(string analyzer, AnalysisOptions options, int rows, int columns, ICollection<AnalysisWarning>? warnings, string? what = null)
+    internal static bool Skip(string analyzer, AnalysisOptions options, int rows, int columns, ICollection<AnalysisWarning>? warnings, string? what = null, int treeFriendlyColumns = TreeFriendlyColumns)
     {
-        if (!Exceeds(options, rows, columns))
+        if (!Exceeds(options, rows, columns, treeFriendlyColumns))
             return false;
         warnings?.Add(new AnalysisWarning(
             Analyzer: analyzer,

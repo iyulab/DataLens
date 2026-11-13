@@ -10,7 +10,7 @@ namespace DataLens.Tests;
 /// the silhouette 64 s, HDBSCAN 4 min, the multivariate change points 6 min and the gap statistic 2 min (single thread), all under the row
 /// thresholds that were set for a handful of columns - <c>mloop info --analyze</c> took minutes to hours (the local outlier factor, 184 s,
 /// is guarded by the same threshold). Past <see cref="AnalysisOptions.PairwiseWorkThreshold"/> (rows² × columns, with more than
-/// 7 columns - fewer are answered by a k-d tree) the all-pairs analyses are skipped and the report says so; the gap
+/// 7 columns, or 12 for the local outlier factor - fewer are answered by a k-d tree) the all-pairs analyses are skipped and the report says so; the gap
 /// statistic reads at most <see cref="AnalysisOptions.GapStatisticMaxRows"/> evenly spaced rows.
 /// </summary>
 public class PairwiseWorkGuardTests
@@ -50,11 +50,14 @@ public class PairwiseWorkGuardTests
         Assert.Contains("PairwiseWorkThreshold", skipped.Message);
     }
 
-    // Measured on 100,000 rows: the local outlier factor takes 28 s at 7 columns and 42 s at 8 (u-insight 0.43.0) - the k-d tree stops helping there.
+    // Measured on 100,000 rows (UInsight 0.43.1): the local outlier factor takes 7 s at 7 and 8 columns, 16 s at 10, 26 s at 12 and 36 s at 14 -
+    // the cost of the old boundary (28 s at 7 columns) is reached at 12.
     [Theory]
     [InlineData(7, false)]
-    [InlineData(8, true)]
-    public async Task TheTreeExemption_EndsAfterSevenColumns(int columns, bool skipped)
+    [InlineData(8, false)]
+    [InlineData(12, false)]
+    [InlineData(13, true)]
+    public async Task TheLofTreeExemption_EndsAfterTwelveColumns(int columns, bool skipped)
     {
         var warnings = new List<AnalysisWarning>();
 
@@ -62,6 +65,21 @@ public class PairwiseWorkGuardTests
 
         Assert.Equal(skipped, report.Lof is null);
         Assert.Equal(skipped, warnings.Any(w => w.Category == WarningCategory.SkippedForSize && w.Analyzer == "Lof"));
+    }
+
+    // DBSCAN grows with the neighbours a point has, not with the columns (89 s at 8 columns on 100,000 standardized rows, 146 s at 7), so its
+    // exemption stays at 7 columns.
+    [Theory]
+    [InlineData(7, false)]
+    [InlineData(8, true)]
+    public async Task TheOtherAnalysesKeepTheirTreeExemptionAtSevenColumns(int columns, bool skipped)
+    {
+        var warnings = new List<AnalysisWarning>();
+
+        var report = await new ClusterAnalyzer().AnalyzeAsync(Adapter(200, columns), new AnalysisOptions { PairwiseWorkThreshold = 1 }, warnings);
+
+        Assert.Equal(skipped, report.Dbscan is null);
+        Assert.Equal(skipped, warnings.Any(w => w.Category == WarningCategory.SkippedForSize && w.Analyzer == "DBSCAN"));
     }
 
     [Fact]

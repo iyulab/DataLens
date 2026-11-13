@@ -52,7 +52,7 @@ public class OutlierAnalyzer : IAnalyzer<OutlierReport>
         // LOF 는 행 수에 O(n²) 이고 열 수에 비례해 느려진다 — 작업량(행² × 열)이 임계를 넘으면 건너뛰고 알린다 (앙상블은 나머지 둘로 판정).
         LofReport? lofReport = null;
         if (PairwiseWork.Skip("Lof", options, nRows, matrix.GetLength(1), warnings,
-                "LOF (앙상블 이상치는 IsolationForest · Mahalanobis 로 판정)"))
+                "LOF (앙상블 이상치는 IsolationForest · Mahalanobis 로 판정)", PairwiseWork.LofTreeFriendlyColumns))
         {
             // 건너뜀 — 앙상블은 나머지 둘로 판정한다.
         }

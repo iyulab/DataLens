@@ -10,7 +10,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ### Changed
 
-- Requires UInsight 0.43.1: the same results, from a faster nearest-neighbour search and a faster HDBSCAN. The all-pairs guard's tree exemption (7 columns) is kept as it was until it is measured again against the new release.
+- Requires UInsight 0.43.1: the same results, from a faster nearest-neighbour search and a faster HDBSCAN.
+- The local outlier factor runs on a table of up to 12 numeric columns whatever the work (was 7), as measured against UInsight 0.43.1: on 100,000 rows it takes 7 s at 7 and 8 columns, 16 s at 10, 26 s at 12 and 36 s at 14 - 12 columns cost what 7 did before. A table of more than 12 columns past `PairwiseWorkThreshold` still skips it with a `SkippedForSize` warning. The exemption of DBSCAN, HDBSCAN, the silhouette and the multivariate change points stays at 7 columns: DBSCAN's cost follows the neighbours a point has (146 s at 7 columns, 89 s at 8, 69 s at 12 on 100,000 standardized rows), not the columns.
 
 ## [0.25.0] - 2026-11-14
 
