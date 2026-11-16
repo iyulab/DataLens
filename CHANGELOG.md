@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-16
+
 ### Added
 
 - `AnalysisOptions.DbscanRowThreshold` (default 50,000 rows, `0` = no threshold): DBSCAN is skipped above it, with a `SkippedForSize` warning and `ClusterReport.Dbscan` null, as HDBSCAN is above `HdbscanRowThreshold`. DBSCAN meets every neighbour of every point, so on a dense standardized table its time grows about as the square of the rows whatever the columns (7 columns: 5 s at 20,000 rows, 31 s at 50,000, 146 s at 100,000 on a synthetic five-cluster table; UInsight 0.43.1) and it had no row threshold. A table of more than 50,000 rows no longer gets a DBSCAN report unless the threshold is raised.
