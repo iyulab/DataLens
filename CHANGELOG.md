@@ -12,6 +12,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 - Requires UAnalytics 0.31 (Hotelling T² charts); nothing DataLens uses changed.
 
+### Fixed
+
+- **A numeric column that is missing in every row no longer takes the feature analyses down with it.** `DataAdapter.ToImputedMatrix` fills a missing value with the column's median; a column with no value at all has none, so it stayed NaN and `FeatureImportance`, `Anova` and `MutualInfo` each failed (`features[4][0] is not a finite number`, `column 'f4' has 10147 missing values`) - one empty column lost three analyses. Such a column is now filled with 0, a constant that the analyses read as a column without variance.
+
 ## [0.26.0] - 2026-11-16
 
 ### Added

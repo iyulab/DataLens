@@ -139,4 +139,24 @@ public class DataAdapterTests
 
         Assert.Throws<InvalidOperationException>(() => adapter.ToNumericMatrix());
     }
+
+    // A column whose every value is missing has no median to fill it with. It stayed NaN, and the native feature analyses refused the matrix
+    // ("features[4][0] is not a finite number") - three analyses lost to one column.
+    [Fact]
+    public void ToImputedMatrix_LeavesNoNaN_WhenAColumnIsMissingInEveryRow()
+    {
+        var data = Enumerable.Range(0, 20).Select(i => new Dictionary<string, string>
+        {
+            ["A"] = (i * 1.5).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["Gone"] = "nan",
+            ["B"] = (i % 3).ToString(),
+        }).ToList();
+        var adapter = new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
+
+        var matrix = adapter.ToImputedMatrix();
+
+        for (var i = 0; i < matrix.GetLength(0); i++)
+            for (var j = 0; j < matrix.GetLength(1); j++)
+                Assert.True(double.IsFinite(matrix[i, j]), $"[{i},{j}] = {matrix[i, j]}");
+    }
 }

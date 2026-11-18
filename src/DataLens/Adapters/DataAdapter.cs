@@ -264,7 +264,14 @@ public class DataAdapter
                     validValues.Add(matrix[i, j]);
             }
 
-            if (validValues.Count == 0) continue;
+            // 전부 결측인 열은 대체할 중앙값이 없어 NaN 으로 남고, 네이티브 분석(FeatureImportance · ANOVA · MutualInfo)이 «유한한 수가 아니다» 로
+            // 셋 다 실패한다 — 열 하나가 분석 전체를 지운다. 전부 결측인 열은 상수 0 으로 두어 낮은 분산 열로 읽히게 한다(정보가 없는 열이다).
+            if (validValues.Count == 0)
+            {
+                for (int i = 0; i < nRows; i++)
+                    matrix[i, j] = 0.0;
+                continue;
+            }
 
             validValues.Sort();
             double median = validValues.Count % 2 == 0
