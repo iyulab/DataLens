@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-19
+
 ### Changed
 
 - Requires UAnalytics 0.31 (Hotelling T² charts); nothing DataLens uses changed.
