@@ -13,6 +13,32 @@ public class FeatureReport
     /// 범주 피처는 여기서 따로 점수를 받는다 — 두 추정기가 달라 같은 눈금이 아니다.
     /// </summary>
     public CategoricalMutualInfoSummary? CategoricalMutualInfo { get; init; }
+
+    /// <summary>
+    /// 숫자 타깃과 범주 피처 사이의 상관비(η², 자유도 보정). 숫자 타깃의 <see cref="Permutation"/> 은 숫자 피처만 읽으므로 범주 피처는 여기서
+    /// 따로 점수를 받는다 — <see cref="CategoricalMutualInfo"/> 와는 다른 양(타깃 분산 대비 설명 몫)이라 눈금이 같지 않다.
+    /// </summary>
+    public CategoricalCorrelationRatioSummary? CategoricalCorrelationRatio { get; init; }
+}
+
+public class CategoricalCorrelationRatioSummary
+{
+    public List<CategoricalCorrelationRatioFeatureResult> Features { get; init; } = [];
+}
+
+public class CategoricalCorrelationRatioFeatureResult
+{
+    public string Name { get; init; } = "";
+    public int Index { get; init; }
+
+    /// <summary>타깃 분산 중 이 열의 값이 설명하는 몫(0..1, 자유도 보정 — 음수는 0).</summary>
+    public double Ratio { get; init; }
+
+    /// <summary>점수에 쓴 행에서 이 열이 가진 서로 다른 값의 수.</summary>
+    public int Levels { get; init; }
+
+    /// <summary>점수에 쓴 행 수(열 값과 타깃 숫자가 모두 있는 행).</summary>
+    public int Rows { get; init; }
 }
 
 public class CategoricalMutualInfoSummary

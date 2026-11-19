@@ -15,6 +15,7 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 ### Added
 
 - **Categorical features are scored against a categorical target.** `FeatureReport.CategoricalMutualInfo` ranks every categorical column by its mutual information (nats) with the target, computed on the contingency table with a Miller-Madow bias correction (a column with a different value on every row no longer tops the list). The native analyses read a numeric matrix, so a table whose features were all categories returned an empty report and no ranking; the result is also kept when the table has fewer than two numeric columns. It is a different estimator from `MutualInfo`, so the two are not on one scale.
+- **Categorical features are scored against a numeric target.** `FeatureReport.CategoricalCorrelationRatio` gives each categorical column the share of the target's variance its values explain (the correlation ratio, adjusted for the degrees of freedom the levels use, so a column with a distinct value on every row scores 0). The permutation importance of a numeric target reads numeric columns only, so a regression table's categorical features had no score. A different quantity from `CategoricalMutualInfo` (which is for a categorical target); report them apart.
 
 ### Fixed
 

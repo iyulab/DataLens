@@ -14,16 +14,17 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
         // 범주 피처는 숫자 행렬에 들어가지 못해 아래 네이티브 분석이 읽지 않는다 — 일치표로 따로 점수를 낸다.
         // 숫자 열이 모자라 아래에서 일찍 돌아가는 표(피처가 전부 범주인 표)에서도 이 결과는 남는다.
         var categoricalMi = CategoricalMutualInfoScorer.Rank(adapter, options.TargetColumn);
+        var categoricalRatio = CategoricalCorrelationRatioScorer.Rank(adapter, options.TargetColumn);
 
         var numericCols = adapter.NumericColumns;
         if (numericCols.Count < 2)
-            return Task.FromResult(new FeatureReport { TargetColumn = options.TargetColumn, CategoricalMutualInfo = categoricalMi });
+            return Task.FromResult(new FeatureReport { TargetColumn = options.TargetColumn, CategoricalMutualInfo = categoricalMi, CategoricalCorrelationRatio = categoricalRatio });
 
         using var client = new InsightClient();
         // 피처 중요도는 모든 행이 필요 → 결측값 중앙값 대체
         var matrix = adapter.ToImputedMatrix();
         if (matrix.GetLength(0) < 3)
-            return Task.FromResult(new FeatureReport { TargetColumn = options.TargetColumn, CategoricalMutualInfo = categoricalMi });
+            return Task.FromResult(new FeatureReport { TargetColumn = options.TargetColumn, CategoricalMutualInfo = categoricalMi, CategoricalCorrelationRatio = categoricalRatio });
 
         // 기본 FeatureImportance (타겟 불필요). 숫자 타깃이 지정됐으면 타깃은 피처가 아니다 — 행렬에 남기면
         // 타깃이 피처와의 상관 쌍 · 조건수 · 점수 순위에 끼어 «다중공선성» 경고를 타깃-피처 관계가 일으키고
@@ -178,7 +179,8 @@ public class FeatureAnalyzer : IAnalyzer<FeatureReport>
             Anova = anova,
             MutualInfo = mutualInfo,
             Permutation = permutation,
-            CategoricalMutualInfo = categoricalMi
+            CategoricalMutualInfo = categoricalMi,
+            CategoricalCorrelationRatio = categoricalRatio
         });
     }
 

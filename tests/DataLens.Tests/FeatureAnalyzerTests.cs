@@ -227,4 +227,80 @@ public class FeatureAnalyzerTests
 
         Assert.Equal(8, rows);
     }
+
+
+    // A numeric target with categorical features: the native permutation importance reads numeric columns only, so these columns had no score.
+    private static DataAdapter BuildNumericTargetWithCategories(int n = 600)
+    {
+        var rng = new Random(5);
+        string[] plans = ["basic", "plus", "pro", "max"];
+        var data = new List<Dictionary<string, string>>(n);
+        for (int i = 0; i < n; i++)
+        {
+            var plan = rng.Next(4);
+            var region = rng.Next(4);
+            var weak = rng.Next(4);
+            double y = plan * 10.0 + (weak == 0 ? 8.0 : 0.0) + rng.NextDouble();      // plan drives it; weak moves it a little
+            data.Add(new Dictionary<string, string>
+            {
+                ["Plan"] = plans[plan],
+                ["Weak"] = "w" + weak,
+                ["Region"] = "r" + region,
+                ["RowId"] = $"row-{i}",
+                ["Spend"] = y.ToString("R"),
+            });
+        }
+        return new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
+    }
+
+    [Fact]
+    public async Task NumericTarget_ScoresCategoricalFeaturesByTheShareOfVarianceTheyExplain()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildNumericTargetWithCategories(), new AnalysisOptions { TargetColumn = "Spend" });
+
+        Assert.NotNull(report.CategoricalCorrelationRatio);
+        var byName = report.CategoricalCorrelationRatio!.Features.ToDictionary(f => f.Name);
+        Assert.DoesNotContain("Spend", byName.Keys);
+        Assert.Equal("Plan", report.CategoricalCorrelationRatio.Features[0].Name);
+        Assert.InRange(byName["Plan"].Ratio, 0.85, 0.95);   // about 125 of the 137 units of variance; the rest is Weak and noise
+        Assert.InRange(byName["Weak"].Ratio, 0.02, 0.2);
+        Assert.True(byName["Region"].Ratio < 0.01, $"an unrelated column scored {byName["Region"].Ratio}");
+        Assert.Equal(4, byName["Plan"].Levels);
+        Assert.Equal(600, byName["Plan"].Rows);
+    }
+
+    // A column with a different value on every row would explain all of the variance without the adjustment.
+    [Fact]
+    public async Task NumericTarget_AColumnThatNamesEveryRow_ExplainsNothing()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildNumericTargetWithCategories(), new AnalysisOptions { TargetColumn = "Spend" });
+
+        Assert.Equal(0.0, report.CategoricalCorrelationRatio!.Features.First(f => f.Name == "RowId").Ratio);
+    }
+
+    [Fact]
+    public async Task CategoricalTarget_GivesNoCorrelationRatio()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildAllCategoricalAdapter(), new AnalysisOptions { TargetColumn = "Label" });
+
+        Assert.Null(report.CategoricalCorrelationRatio);
+    }
+
+    [Fact]
+    public void CorrelationRatio_OfLevelsThatSplitTheTargetExactly_IsOne_AndSkipsRowsWithoutAValue()
+    {
+        uint[] levels = [.. Enumerable.Range(0, 400).Select(i => (uint)(i % 2)), uint.MaxValue];
+        double[] target = [.. Enumerable.Range(0, 400).Select(i => i % 2 == 0 ? 1.0 : 5.0), 3.0];
+        var (ratio, count, rows) = CategoricalCorrelationRatioScorer.Score(levels, target);
+
+        Assert.Equal(1.0, ratio, 9);
+        Assert.Equal(2, count);
+        Assert.Equal(400, rows);                                   // the row without a level is left out
+
+        var (_, _, rowsWithNaN) = CategoricalCorrelationRatioScorer.Score([0u, 1u, 0u, 1u, 0u], [1.0, double.NaN, 2.0, 3.0, 1.5]);
+        Assert.Equal(4, rowsWithNaN);
+    }
 }
