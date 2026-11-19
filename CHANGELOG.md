@@ -12,6 +12,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 - Requires UAnalytics 0.31 (Hotelling T² charts); nothing DataLens uses changed.
 
+### Added
+
+- **Categorical features are scored against a categorical target.** `FeatureReport.CategoricalMutualInfo` ranks every categorical column by its mutual information (nats) with the target, computed on the contingency table with a Miller-Madow bias correction (a column with a different value on every row no longer tops the list). The native analyses read a numeric matrix, so a table whose features were all categories returned an empty report and no ranking; the result is also kept when the table has fewer than two numeric columns. It is a different estimator from `MutualInfo`, so the two are not on one scale.
+
 ### Fixed
 
 - **A numeric column that is missing in every row no longer takes the feature analyses down with it.** `DataAdapter.ToImputedMatrix` fills a missing value with the column's median; a column with no value at all has none, so it stayed NaN and `FeatureImportance`, `Anova` and `MutualInfo` each failed (`features[4][0] is not a finite number`, `column 'f4' has 10147 missing values`) - one empty column lost three analyses. Such a column is now filled with 0, a constant that the analyses read as a column without variance.

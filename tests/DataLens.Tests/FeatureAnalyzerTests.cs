@@ -145,4 +145,86 @@ public class FeatureAnalyzerTests
         Assert.True(first.PValue < 1e-6, $"p = {first.PValue}");
         Assert.Equal("Noise", report.Anova.Features[1].Name);
     }
+
+    // Native analyses read a numeric matrix, so a table whose features are all categories left the report empty and the
+    // ranking blank. Two categorical columns are scored on their contingency table with the categorical target.
+    private static DataAdapter BuildAllCategoricalAdapter(int n = 600)
+    {
+        var rng = new Random(3);
+        string[] levels = ["Phishy", "Suspicious", "Legitimate"];
+        var data = new List<Dictionary<string, string>>(n);
+        for (int i = 0; i < n; i++)
+        {
+            var y = levels[rng.Next(3)];
+            data.Add(new Dictionary<string, string>
+            {
+                ["Strong"] = rng.NextDouble() < 0.85 ? y : levels[rng.Next(3)],
+                ["Weak"] = rng.NextDouble() < 0.45 ? y : levels[rng.Next(3)],
+                ["Noise"] = levels[rng.Next(3)],
+                ["RowId"] = $"row-{i}",
+                ["Label"] = y,
+            });
+        }
+        return new DataAdapter(DataPipeline.FromData(data).ToDataFrame());
+    }
+
+    [Fact]
+    public async Task AllCategoricalFeatures_AreRankedAgainstACategoricalTarget()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildAllCategoricalAdapter(), new AnalysisOptions { TargetColumn = "Label" });
+
+        Assert.NotNull(report.CategoricalMutualInfo);
+        var ranked = report.CategoricalMutualInfo!.Features;
+        Assert.DoesNotContain(ranked, f => f.Name == "Label");
+        Assert.Equal(["Strong", "Weak"], ranked.Take(2).Select(f => f.Name).ToArray());
+        Assert.True(ranked[0].Mi > ranked[1].Mi);
+        Assert.Equal(3, ranked[0].Levels);
+        Assert.Equal(600, ranked[0].Rows);
+    }
+
+    // A column with a different value on every row names each row, so its plain table estimate equals the entropy of
+    // the target - without the bias correction it would top the ranking of a table it says nothing about.
+    [Fact]
+    public async Task AColumnThatNamesEveryRow_DoesNotOutrankARealFeature()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildAllCategoricalAdapter(), new AnalysisOptions { TargetColumn = "Label" });
+
+        var byName = report.CategoricalMutualInfo!.Features.ToDictionary(f => f.Name);
+        Assert.True(byName["RowId"].Mi < byName["Weak"].Mi,
+            $"RowId({byName["RowId"].Mi}) should rank below Weak({byName["Weak"].Mi})");
+        Assert.True(byName["Noise"].Mi < 0.02, $"an unrelated column scored {byName["Noise"].Mi}");
+    }
+
+    [Fact]
+    public async Task NumericTarget_GivesNoCategoricalScores()
+    {
+        var report = await new FeatureAnalyzer().AnalyzeAsync(
+            BuildAdapter(), new AnalysisOptions { TargetColumn = "Y" });
+
+        Assert.Null(report.CategoricalMutualInfo);
+    }
+
+    [Fact]
+    public void Score_OfIdenticalColumns_IsTheEntropyOfTheColumn()
+    {
+        uint[] x = [.. Enumerable.Range(0, 400).Select(i => (uint)(i % 2))];
+        var (mi, levels, rows) = CategoricalMutualInfoScorer.Score(x, x);
+
+        // ln 2 minus the Miller-Madow term (1 * 1) / (2 * 400)
+        Assert.Equal(Math.Log(2) - 1.0 / 800.0, mi, 9);
+        Assert.Equal(2, levels);
+        Assert.Equal(400, rows);
+    }
+
+    [Fact]
+    public void Score_SkipsRowsWithoutALabel()
+    {
+        uint[] x = [0, 1, 0, 1, uint.MaxValue, 0, 1, 0, 1, 0];
+        uint[] y = [0, 1, 0, 1, 0, uint.MaxValue, 1, 0, 1, 0];
+        var (_, _, rows) = CategoricalMutualInfoScorer.Score(x, y);
+
+        Assert.Equal(8, rows);
+    }
 }
