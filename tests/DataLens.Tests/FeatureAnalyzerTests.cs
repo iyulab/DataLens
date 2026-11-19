@@ -207,15 +207,87 @@ public class FeatureAnalyzerTests
     }
 
     [Fact]
-    public void Score_OfIdenticalColumns_IsTheEntropyOfTheColumn()
+    public void Score_OfIdenticalColumns_IsTheEntropyOfTheColumnMinusTheChanceLevel()
     {
         uint[] x = [.. Enumerable.Range(0, 400).Select(i => (uint)(i % 2))];
         var (mi, levels, rows) = CategoricalMutualInfoScorer.Score(x, x);
 
-        // ln 2 minus the Miller-Madow term (1 * 1) / (2 * 400)
-        Assert.Equal(Math.Log(2) - 1.0 / 800.0, mi, 9);
+        // ln 2 minus what two unrelated balanced binary columns of 400 rows score on average (about 1 / (2n)).
+        Assert.InRange(mi, Math.Log(2) - 0.002, Math.Log(2) - 0.0005);
         Assert.Equal(2, levels);
         Assert.Equal(400, rows);
+    }
+
+    // The chance level is the table's mean estimate over every way of pairing the two columns' rows. For a table small
+    // enough to enumerate (8 rows: 40,320 pairings) the closed form must equal that mean.
+    [Theory]
+    [InlineData(new uint[] { 0, 0, 0, 1, 1, 1, 2, 2 }, new uint[] { 0, 0, 1, 1, 0, 1, 0, 1 })]
+    [InlineData(new uint[] { 0, 1, 2, 3, 4, 5, 6, 7 }, new uint[] { 0, 0, 0, 0, 1, 1, 1, 1 })]
+    [InlineData(new uint[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new uint[] { 0, 1, 2, 0, 1, 2, 0, 1 })]
+    public void ChanceLevel_EqualsTheMeanOverEveryPairing(uint[] x, uint[] y)
+    {
+        double sum = 0; long count = 0;
+        var perm = (uint[])y.Clone();
+        void Visit(int k)
+        {
+            if (k == perm.Length)
+            {
+                sum += CategoricalMutualInfoScorer.PlugIn(x, perm); count++;
+                return;
+            }
+            for (int i = k; i < perm.Length; i++)
+            {
+                (perm[k], perm[i]) = (perm[i], perm[k]);
+                Visit(k + 1);
+                (perm[k], perm[i]) = (perm[i], perm[k]);
+            }
+        }
+        Visit(0);
+
+        Assert.Equal(sum / count, CategoricalMutualInfoScorer.ChanceLevel(x, y), 9);
+    }
+
+    // Measured on the published 0.52.0 (docs/issues draft): a column that nearly names every row scored about 0.10 nat
+    // against a target it is independent of, and a column with a real weak link scored 0.03 - the ranking put noise first.
+    [Theory]
+    [InlineData(600, 400)]
+    [InlineData(6000, 4000)]
+    [InlineData(600, 100)]
+    [InlineData(600, 30)]
+    public void AnIndependentColumn_ScoresNearZero_HoweverSparse(int rows, int levels)
+    {
+        var rng = new Random(11);
+        var scores = new List<double>();
+        for (int rep = 0; rep < 20; rep++)
+        {
+            uint[] x = [.. Enumerable.Range(0, rows).Select(_ => (uint)rng.Next(levels))];
+            uint[] y = [.. Enumerable.Range(0, rows).Select(_ => (uint)rng.Next(3))];
+            scores.Add(CategoricalMutualInfoScorer.Score(x, y).Mi);
+        }
+        scores.Sort();
+
+        Assert.True(scores[scores.Count / 2] < 0.01, $"median {scores[scores.Count / 2]} for {rows} rows / {levels} levels");
+        Assert.True(scores[^1] < 0.05, $"worst {scores[^1]} for {rows} rows / {levels} levels");
+    }
+
+    [Fact]
+    public void AWeakRealDriver_OutranksAnAlmostUniqueColumn()
+    {
+        var rng = new Random(3);
+        const int n = 600;
+        var cls = new uint[n]; var color = new uint[n]; var hi = new uint[n]; var shape = new uint[n];
+        for (int i = 0; i < n; i++)
+        {
+            shape[i] = (uint)rng.Next(3);
+            color[i] = (uint)rng.Next(4);
+            hi[i] = (uint)rng.Next(400);
+            // the label follows `shape`, and `color` bends it a little: when color == 3, 30 % of rows go to class 0
+            cls[i] = color[i] == 3 && rng.NextDouble() < 0.3 ? 0u : shape[i];
+        }
+
+        double weak = CategoricalMutualInfoScorer.Score(color, cls).Mi;
+        double noise = CategoricalMutualInfoScorer.Score(hi, cls).Mi;
+        Assert.True(weak > noise, $"weak driver {weak} should outrank noise {noise}");
     }
 
     [Fact]

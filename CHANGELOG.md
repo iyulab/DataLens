@@ -12,6 +12,10 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 - Requires FilePrepper 0.15 (reads JSON Lines files and macro-enabled workbooks as tables, and refuses a zip that is no table instead of reading its bytes as text); no DataLens call changed.
 
+### Fixed
+
+- **A column that is independent of a categorical target no longer outranks a real weak driver in `CategoricalMutualInfo`.** The bias correction was the Miller-Madow term, an asymptotic estimate that falls short when a column has about as many levels as rows: a column of 400 random values over 600 rows scored about 0.10 nat against an unrelated target, three times what a genuinely (weakly) related four-level column scored, and the same held for 4,000 levels over 6,000 rows. The score now subtracts the chance level - the exact expectation of the plug-in estimate over every way of pairing the two columns' rows (a hypergeometric sum, no sampling or seed) - so an unrelated column lands near zero however sparse it is.
+
 ## [0.27.0] - 2026-11-19
 
 ### Changed

@@ -9,7 +9,7 @@ public class FeatureReport
     public PermutationSummary? Permutation { get; init; }
 
     /// <summary>
-    /// 범주 타깃과 범주 피처 사이의 상호정보량(nat, Miller–Madow 보정). <see cref="MutualInfo"/> 는 숫자 피처만 읽으므로
+    /// 범주 타깃과 범주 피처 사이의 상호정보량(nat, 우연 수준을 뺀 값 — 두 열을 무작위로 짝지었을 때 추정의 기댓값). <see cref="MutualInfo"/> 는 숫자 피처만 읽으므로
     /// 범주 피처는 여기서 따로 점수를 받는다 — 두 추정기가 달라 같은 눈금이 아니다.
     /// </summary>
     public CategoricalMutualInfoSummary? CategoricalMutualInfo { get; init; }
