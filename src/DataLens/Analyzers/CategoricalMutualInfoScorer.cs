@@ -114,18 +114,18 @@ internal static class CategoricalMutualInfoScorer
 
         double expected = 0.0;
         foreach (var (a, aTimes) in aSizes)
-        foreach (var (b, bTimes) in bSizes)
-        {
-            double head = logFactorial[a] + logFactorial[b] + logFactorial[n - a] + logFactorial[n - b] - logFactorial[n];
-            double cell = 0.0;
-            for (int k = Math.Max(1, a + b - n); k <= Math.Min(a, b); k++)
+            foreach (var (b, bTimes) in bSizes)
             {
-                double logP = head - logFactorial[k] - logFactorial[a - k] - logFactorial[b - k] - logFactorial[n - a - b + k];
-                cell += (double)k / n * Math.Log((double)n * k / ((double)a * b)) * Math.Exp(logP);
-            }
+                double head = logFactorial[a] + logFactorial[b] + logFactorial[n - a] + logFactorial[n - b] - logFactorial[n];
+                double cell = 0.0;
+                for (int k = Math.Max(1, a + b - n); k <= Math.Min(a, b); k++)
+                {
+                    double logP = head - logFactorial[k] - logFactorial[a - k] - logFactorial[b - k] - logFactorial[n - a - b + k];
+                    cell += (double)k / n * Math.Log((double)n * k / ((double)a * b)) * Math.Exp(logP);
+                }
 
-            expected += cell * aTimes * bTimes;
-        }
+                expected += cell * aTimes * bTimes;
+            }
 
         return expected;
     }
