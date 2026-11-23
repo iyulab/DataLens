@@ -8,6 +8,8 @@ Maintained from 0.14.1 onward; earlier releases are recorded by their tags only.
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-11-23
+
 ### Changed
 
 - Requires FilePrepper 0.15 (reads JSON Lines files and macro-enabled workbooks as tables, and refuses a zip that is no table instead of reading its bytes as text); no DataLens call changed.
