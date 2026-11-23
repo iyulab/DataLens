@@ -62,20 +62,18 @@ public class AsyncCancellationTests
     [Fact]
     public async Task Analyze_CancelDuringAnalysis_ThrowsBetweenAnalyzers()
     {
-        // Cancel 보장 범위는 between-analyzer. 일정 시점에 cancel 시,
-        // 다음 analyzer 진입 직전에 OperationCanceledException 이 throw 되어야 한다.
+        // Cancel 보장 범위는 between-analyzer. 분석이 도는 동안 cancel 하면 다음 analyzer 진입 직전에
+        // OperationCanceledException 이 throw 되어야 한다.
+        // 취소는 Analyze 가 Task 를 돌려준 직후 호출 thread 에서 동기로 건다 — 분석은 다른 thread 에서 막 시작하는 중이라
+        // 끝나기 전에 취소가 닿는다. (예전에는 별도 Task 가 10ms 뒤 취소했는데, 느린 러너에서 그 Task 가 분석이 끝난 뒤에야
+        // 돌아 «예외 없음» 으로 실패했다 — 시계에 기대는 단언이었다.)
         var df = BuildLargeFrame(rows: 800);
         using var cts = new CancellationTokenSource();
 
-        // cancellation 을 별도 thread 에서 빠르게 trigger.
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(10);
-            cts.Cancel();
-        });
+        var task = DataLensEngine.Analyze(df, new AnalysisOptions(), cts.Token);
+        cts.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            DataLensEngine.Analyze(df, new AnalysisOptions(), cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
     }
 
     private record PocoSample(int Id, double X, double Y, string Tag);
